@@ -399,10 +399,10 @@ class var(object):
             #Check type of vertical and horizontal grid
             self.iper = 0; self.jper = 0
 
-            if 'xi_u' in ncfile.variables[varname].dimensions: 
+            if 'xi_u' in ncfile.variables[varname].dimensions or 'x_u' in ncfile.variables[varname].dimensions: 
                 self.imin = 1
                 self.iper = iper
-            if 'eta_v' in ncfile.variables[varname].dimensions: 
+            if 'eta_v' in ncfile.variables[varname].dimensions or 'y_v' in ncfile.variables[varname].dimensions: 
                 self.jmin = 1
                 self.jper = jper
             if 's_w' in ncfile.variables[varname].dimensions: self.kmin = 0

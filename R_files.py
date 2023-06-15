@@ -5471,8 +5471,19 @@ class files(object):
             self.realyear_origin = datetime(1979,1,1)
             self.realyear_tstart = datetime(2008,8,26,12)
 
+            if 'rrexnum100_UP3' in simul:
+                folder_name= 'RREXNUM100_UP3/'
+            elif 'rrexnum100_GEO' in simul:
+                folder_name= 'RREXNUM100_GEO/'     
+            elif 'rrexnum100_NOFILT' in simul:
+                folder_name= 'RREXNUM100_NOFILT/'     
+            elif 'rrexnum100_NOIMP' in simul:
+                folder_name= 'RREXNUM100_NOIMP/'     
+            else:
+                folder_name= 'RREXNUM100/'
+
             if os.getenv('HOSTNAME') is None:
-                folder = libra +'/gula/ROMS/Simulations/RREXNUM/RREXNUM100'
+                folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name + 'HIS/'
                 folder_grd = libra +'/gula/ROMS/Simulations/RREXNUM'
             else:
                 folder = '/home/datawork-lops-rrex/jgula/RREXNUM100/RUN_v3/HIS'
@@ -5490,20 +5501,21 @@ class files(object):
             if 'avg' in simul:
                 self.tfile=1
                 if 'mean' in simul:
+                    mean = '.mean.00005-00014'
                     if 'vrt' in simul:
-                        self.his = folder + '/rrexnum100_diags_vrt_avg.mean'
+                        self.his = folder + '/rrexnum100_diags_vrt_avg' + mean
                     elif 'ek' in simul:
-                        self.his = folder +  '/rrexnum100_diags_ek_avg.mean'
+                        self.his = folder +  '/rrexnum100_diags_ek_avg' + mean
                     elif 'uv' in simul:
-                        self.his = folder + '/rrexnum100_diaM_avg.mean'
+                        self.his = folder + '/rrexnum100_diaM_avg' + mean
                     elif 'ts' in simul:
-                        self.his = folder + '/rrexnum100_dia_avg.mean'
+                        self.his = folder + '/rrexnum100_diaT_avg' + mean
                     elif 'pv' in simul:
-                        self.his = folder + '/rrexnum100_diags_pv_avg.mean'
+                        self.his = folder + '/rrexnum100_diags_pv_avg' + mean
                     elif 'wdia' in simul:
-                        self.his = folder + '/rrexnum100_diags_wdia_avg.mean'                    
+                        self.his = folder + '/rrexnum100_diags_wdia_avg' + mean                   
                     else:
-                        self.his = folder + '/rrexnum100_avg.mean'
+                        self.his = folder + '/rrexnum100_avg' + mean
 
                     self.digits = 0
                 else:
@@ -5515,7 +5527,7 @@ class files(object):
                     elif 'uv' in simul:
                         self.his = folder + '/rrexnum100_diaM_avg.'
                     elif 'ts' in simul:
-                        self.his = folder + '/rrexnum100_dia_avg.'
+                        self.his = folder + '/rrexnum100_diaT_avg.'
                     elif 'pv' in simul:
                         self.his = folder + '/rrexnum100_diags_pv_avg.'
                     elif 'wdia' in simul:
@@ -5531,7 +5543,7 @@ class files(object):
                 elif 'uv' in simul:
                     self.his = folder +  '/rrexnum100_diaM.'
                 elif 'ts' in simul:
-                    self.his = folder +  '/rrexnum100_dia.'
+                    self.his = folder +  '/rrexnum100_diaT.'
                 elif 'pv' in simul:
                     self.his = folder +  '/rrexnum100_diags_pv.'
                 elif 'wdia' in simul:

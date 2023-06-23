@@ -3,7 +3,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine sigma_to_z_intr_bot (Lm,Mm,N,nz, imin,jmin,kmin,
      &                    z_r, z_w, rmask, var,
-     &                    z_lev, var_zlv, FillValue)
+     &                    z_lev, var_zlv, below, FillValue)
 ! Interpolate field "var" defined in sigma-space to 3-D z_lev. 
 !
 

@@ -184,7 +184,11 @@ def vinterp(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, floattyp
     elif interp_bot==1:
         if verbo: print("data will be interpolated below ground")
         below=10000.
-        vnew=toolsF.sigma_to_z_intr_bot(z_r, z_w,mask,var,newz,below,9999.)
+        try:
+            vnew=toolsF.sigma_to_z_intr_bot(z_r, z_w,mask,var,newz,below,9999.)
+        except:
+            vnew=toolsF.sigma_to_z_intr_bot(imin,jmin,kmin,z_r, z_w,mask,var,newz,below,9999.)
+        
     elif interp_sfc==1:
         if verbo: print("no interpolation below ground")
         try:

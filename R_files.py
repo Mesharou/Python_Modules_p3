@@ -5474,11 +5474,17 @@ class files(object):
             if 'rrexnum100_UP3' in simul:
                 folder_name= 'RREXNUM100_UP3/'
             elif 'rrexnum100_GEO' in simul:
-                folder_name= 'RREXNUM100_GEO/'     
+                folder_name= 'RREXNUM100_GEO/'
+            elif 'rrexnum100_NOFILT2' in simul:
+                folder_name= 'RREXNUM100_NOFILT2/'
             elif 'rrexnum100_NOFILT' in simul:
-                folder_name= 'RREXNUM100_NOFILT/'     
+                folder_name= 'RREXNUM100_NOFILT/'
             elif 'rrexnum100_NOIMP' in simul:
-                folder_name= 'RREXNUM100_NOIMP/'     
+                folder_name= 'RREXNUM100_NOIMP/'
+            elif 'rrexnum100_WENO5' in simul:
+                folder_name= 'RREXNUM100_WENO5/'
+            elif 'rrexnum100_C4' in simul:
+                folder_name= 'RREXNUM100_C4/'
             else:
                 folder_name= 'RREXNUM100/'
 

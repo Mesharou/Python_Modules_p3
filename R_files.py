@@ -158,7 +158,6 @@ class load(object):
             year2 = date2.year
             month2 = date2.month
             day2 = date2.day
-
  
             #fix for some simulations whre XIOS name is shifted by one day.
             if (self.simul == 'gigatl3_6h' and self.time>=1550)\
@@ -171,9 +170,7 @@ class load(object):
                 month1 = date1.month
                 day1 = date1.day
 
-            
-
-            self.infiletime = self.time%self.ncname.tfile
+            self.infiletime = (self.time-self.ncname.shift)%self.ncname.tfile
             self.filetime = self.time
             
             if self.ncname.model == 'croco_xios':
@@ -311,7 +308,7 @@ class load(object):
             month2 = date2.month
             day2 = date2.day
             
-            self.infiletime = self.time%self.ncname.tfile
+            self.infiletime = (self.time-self.ncname.shift)%self.ncname.tfile
             self.filetime = self.time-self.infiletime
             
             if self.output: print((self.simul,format(self.time)))
@@ -5485,6 +5482,8 @@ class files(object):
                 folder_name= 'RREXNUM100_WENO5/'
             elif 'rrexnum100_C4' in simul:
                 folder_name= 'RREXNUM100_C4/'
+            elif 'rrexnum100_RSUP5_NOFILT' in simul:
+                folder_name= 'RREXNUM100_RSUP5_NOFILT/'
             else:
                 folder_name= 'RREXNUM100/'
 

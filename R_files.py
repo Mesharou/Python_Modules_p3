@@ -5482,17 +5482,27 @@ class files(object):
                 folder_name= 'RREXNUM100_WENO5/'
             elif 'rrexnum100_C4' in simul:
                 folder_name= 'RREXNUM100_C4/'
+            elif 'rrexnum100_RSUP5_NOFILT_notides' in simul:
+                folder_name= 'RREXNUM100_RSUP5_NOFILT_notides/'
             elif 'rrexnum100_RSUP5_NOFILT' in simul:
                 folder_name= 'RREXNUM100_RSUP5_NOFILT/'
+            elif 'rrexnum100_notides' in simul:
+                folder_name= 'RREXNUM100_notides/'
             else:
                 folder_name= 'RREXNUM100/'
+                
+            if 'tracer' in simul:
+                folder_name= folder_name[:-1] + '_T/'
 
             if os.getenv('HOSTNAME') is None:
                 folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name + 'HIS/'
                 folder_grd = libra +'/gula/ROMS/Simulations/RREXNUM'
             else:
-                folder = '/home/datawork-lops-rrex/jgula/RREXNUM100/RUN_v3/HIS'
-                folder_grd = '/home/datawork-lops-rrex/cvic/RREX100-UP3/GRD'
+                if 'tracer' in simul:
+                    folder = '/home/datawork-lops-megatl/RREXNUM/' + folder_name + 'HIS/'
+                else:
+                    folder = '/home/datawork-lops-rrex/jgula/' + folder_name + 'HIS/'
+                folder_grd = '/home/datawork-lops-rrex/jgula/INIT_RREXNUM100/GRD'
                 
             self.grd = folder_grd + '/rrexnum_grd.nc'
             
@@ -5507,6 +5517,7 @@ class files(object):
                 self.tfile=1
                 if 'mean' in simul:
                     mean = '.mean.00005-00014'
+                    #mean = '.mean.00010-00049'        
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum100_diags_vrt_avg' + mean
                     elif 'ek' in simul:

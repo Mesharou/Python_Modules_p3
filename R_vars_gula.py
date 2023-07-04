@@ -129,6 +129,7 @@ class var(object):
     'rho1': ['in-situ density1', 'kg.m-3', [0,0,1]],\
     'rho1_sol2': ['in-situ density', 'kg.m-3', [0,0,1]],\
     'rhop': ['potential density', 'kg.m-3', [0,0,1]],\
+    'rho1_gsw': ['potential density at 1000 m', 'kg.m-3', [0,0,1]],\
     'bvf': ['Brunt-Vaisala Frequency squared: N2', 's-2', [0,0,0]],\
     'buoy': ['buoyancy', 'm/s-2', [0,0,1]],\
     'buoy1': ['buoyancy1', 'm/s-2', [0,0,1]],\
@@ -251,7 +252,10 @@ class var(object):
     'tendency_3d': ['Advective tendency for buoyancy', ' ' ,[0,0,1]],\
     'tendency_u': ['Horizontal tendency for buoyancy', ' ' ,[0,0,1]],\
     'tendency_3d_u': ['Advective tendency for buoyancy', ' ' ,[0,0,1]],\
-    'tendency_full_u': ['Tendency for buoyancy', ' ' ,[0,0,1]]\
+    'tendency_full_u': ['Tendency for buoyancy', ' ' ,[0,0,1]],\
+    \
+    'diffusivity': ['diffusivity', ' ' ,[0,0,1]],\
+    \
     }
     
     
@@ -741,7 +745,7 @@ class var(object):
             pn = np.asfortranarray(simul.pn[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])
             f = np.asfortranarray(simul.f[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])
             mask = np.asfortranarray(simul.mask[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])
-            topo = np.asfortranarray(simul.topo[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])            
+            topo = np.asfortranarray(simul.topo[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])
         else: 
             coord = self.coord[0:4]
             [ny1,ny2,nx1,nx2] = self.coord[0:4]
@@ -751,7 +755,18 @@ class var(object):
             f = np.asfortranarray(simul.f[nx1s:nx2-nx1s,ny1s:ny2-ny1s])
             mask = np.asfortranarray(simul.mask[nx1s:nx2-nx1s,ny1s:ny2-ny1s])
             topo = np.asfortranarray(simul.topo[nx1s:nx2-nx1s,ny1s:ny2-ny1s])
-            
+
+
+        if self.name in ['rho1_gsw']:
+            ''' Variables that need lon/lat'''
+            if 'coord' in  kwargs:      
+                x = np.asfortranarray(simul.x[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])
+                y = np.asfortranarray(simul.y[nx1i-nx1s:nx2i-nx1s,ny1i-ny1s:ny2i-ny1s])
+            else: 
+                x = np.asfortranarray(simul.x[nx1s:nx2-nx1s,ny1s:ny2-ny1s])
+                y = np.asfortranarray(simul.y[nx1s:nx2-nx1s,ny1s:ny2-ny1s])
+
+                
         if 'depths' in  kwargs: 
             depths = kwargs['depths']
         else: 
@@ -768,7 +783,7 @@ class var(object):
         ################################################
 
 
-        if self.name in ['rho','rho1','rhop','bvf','buoy','buoy1']:
+        if self.name in ['rho','rho1','rhop','bvf','buoy','buoy1','rho1_gsw']:
 
 
             if self.name not in ['rho1','buoy1']:
@@ -787,7 +802,8 @@ class var(object):
             elif self.name in ['buoy']: var = toolsF.get_buoy(T,S,z_r,z_w,simul.rho0)
             elif self.name in ['buoy1']: var = toolsF.rho1_eos(T,S,simul.rho0)*(-simul.g/simul.rho0)
             elif self.name in ['rhop']: var = tools_g.rhop(T,S)
-
+            elif self.name in ['rho1_gsw']: var = tools_g.rho1_gsw(T,S,z_r,x,y)
+            
         ################################################
         
         elif self.name in ['hbls_rho']:

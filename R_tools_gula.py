@@ -45,10 +45,15 @@ try:
     from pyamg.gallery import *
     amg = True
 except:
-    'print no amg module'
+    print('no amg module')
     amg = False
 
-
+try:
+    import gsw
+    is_gsw = True
+except:
+    print('no gsw module')
+    is_gsw = False
 
 #################################################
 # get_J1
@@ -2090,6 +2095,25 @@ def rhop(T,S):
     return SMOW + RB*S + RC*(S**1.5) + d0*S*S 
 
 
+
+
+######################################################  
+def rho1_gsw(T,S,z_r,x,y):
+######################################################  
+    """Potential Density of seawater at 1000 m"""
+    if is_gsw:
+
+        p       = gsw.p_from_z(z_r,np.tile(y[:,:,None],(1,z_r.shape[-1])))
+        SA      = gsw.SA_from_SP(S,p,np.tile(x[:,:,None],(1,z_r.shape[-1])),np.tile(y[:,:,None],(1,z_r.shape[-1])))
+        CT      = gsw.CT_from_pt(SA,T)
+        rhop    = gsw.rho(SA,CT,1000)
+        # gsw.sigma1(SA,CT) + 1000 is the same than gsw.rho(SA,CT,1000)
+
+        #########################################
+        return rhop
+
+    else:
+        print('no gsw module')
 
 
 

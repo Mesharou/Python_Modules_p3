@@ -1081,6 +1081,38 @@ def diffzz(var,depths):
         
         return dvardz
         
+
+#######################################################
+#Compute 3d gradients
+#######################################################
+
+
+def gradients_3d(buoy,pm,pn,z_r, chain=True):
+
+    if not chain:
+        
+        # with vert. interp.
+        dbdx = u2rho(diffxi(buoy,pm,z_r,z_w))
+        dbdy = v2rho(diffeta(buoy,pn,z_r,z_w))
+        dbdz = rho2w((buoy[:,:,1:] - buoy[:,:,:-1])/(z_r[:,:,1:] - z_r[:,:,:-1]))
+    
+    else:
+
+        # with chain rule
+        dzdx = diffx(z_r,pm)
+        dzdy = diffy(z_r,pn)
+
+        dbdx = diffx(buoy,pm)
+        dbdy = diffy(buoy,pn)
+
+        dbdz = rho2w((buoy[:,:,1:] - buoy[:,:,:-1])/(z_r[:,:,1:] - z_r[:,:,:-1]))
+        dbdx = u2rho(dbdx) - dbdz * u2rho(dzdx)
+        dbdy = v2rho(dbdy) - dbdz * v2rho(dzdy)
+    
+    return [dbdx,dbdy,dbdz]
+    
+
+
         
               
 #######################################################

@@ -5484,6 +5484,12 @@ class files(object):
                 folder_name= 'RREXNUM100_C4/'
             elif 'rrexnum100_RSUP5_NOFILT_notides' in simul:
                 folder_name= 'RREXNUM100_RSUP5_NOFILT_notides/'
+            elif 'rrexnum100_RSUP5_NOFILT_noslopemax' in simul:
+                folder_name= 'RREXNUM100_RSUP5_NOFILT_noslopemax/'
+            elif 'rrexnum100_RSUP5_NOFILT_weakslope' in simul:
+                folder_name= 'RREXNUM100_RSUP5_NOFILT_weakslope/'
+            elif 'rrexnum100_RSUP5_NOFILT_nomax' in simul:
+                folder_name= 'RREXNUM100_RSUP5_NOFILT_nomax/'
             elif 'rrexnum100_RSUP5_NOFILT' in simul:
                 folder_name= 'RREXNUM100_RSUP5_NOFILT/'
             elif 'rrexnum100_notides' in simul:
@@ -5516,8 +5522,12 @@ class files(object):
             if 'avg' in simul:
                 self.tfile=1
                 if 'mean' in simul:
-                    mean = '.mean.00005-00014'
-                    #mean = '.mean.00010-00049'        
+                    if 'tracer' in simul:
+                        mean = '.mean.00005-00014' 
+                        #mean = '.mean.00020-00039'
+                    else:
+                        mean = '.mean.00005-00014'
+                        #mean = '.mean.00010-00049'
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum100_diags_vrt_avg' + mean
                     elif 'ek' in simul:
@@ -5583,29 +5593,143 @@ class files(object):
 #                self.tend=100000
                 
         ##################
-        
-        elif 'rrexnum200' in simul:
+
+
+        elif 'rrexnum' in simul and '200' in simul:
         
             self.realyear = True
             self.realyear_origin = datetime(1979,1,1)
             self.realyear_tstart = datetime(2008,8,26,12)
 
-            self.model = 'croco_xios'
-            self.digits = 0
+            if 'rrexnum200_UP3' in simul:
+                folder_name= 'RREXNUM200_UP3/'
+            elif 'rrexnum200_GEO' in simul:
+                folder_name= 'RREXNUM200_GEO/'
+            elif 'rrexnum200_NOFILT2' in simul:
+                folder_name= 'RREXNUM200_NOFILT2/'
+            elif 'rrexnum200_NOFILT' in simul:
+                folder_name= 'RREXNUM200_NOFILT/'
+            elif 'rrexnum200_NOIMP' in simul:
+                folder_name= 'RREXNUM200_NOIMP/'
+            elif 'rrexnum200_WENO5' in simul:
+                folder_name= 'RREXNUM200_WENO5/'
+            elif 'rrexnum200_C4' in simul:
+                folder_name= 'RREXNUM200_C4/'
+            elif 'rrexnum200_RSUP5_NOFILT_notides' in simul:
+                folder_name= 'RREXNUM200_RSUP5_NOFILT_notides/'
+            elif 'rrexnum200_RSUP5_NOFILT' in simul:
+                folder_name= 'RREXNUM200_RSUP5_NOFILT/'
+            elif 'rrexnum200_notides' in simul:
+                folder_name= 'RREXNUM200_notides/'
+            elif 'rrexnums200_RSUP5_NOFILT' in simul:
+                folder_name= 'RREXNUMS200_RSUP5_NOFILT/'   
+            else:
+                folder_name= 'RREXNUM200/'
+                
+            if 'tracer' in simul:
+                folder_name= folder_name[:-1] + '_T/'
 
-            folder= '/home/datawork-lops-rrex/tpicard/OUTPUTS_RREXNUM200'
-            self.grd= folder + '/HIS/rrexnum200_grid.nc'
+            if os.getenv('HOSTNAME') is None:
+                folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name + 'HIS/'
+                folder_grd = libra +'/gula/ROMS/Simulations/RREXNUM'
+            else:
+                if 'tracer' in simul:
+                    folder = '/home/datawork-lops-megatl/RREXNUM/' + folder_name + 'HIS/'
+                else:
+                    folder = '/home/datawork-lops-rrex/jgula/' + folder_name + 'HIS/'
+                folder_grd = '/home/datawork-lops-rrex/jgula/INIT_RREXNUM100/GRD'
+            
+            if 'rrexnums' in simul:
+                self.grd = folder_grd + '/rrexnums_grd.nc'
+            else:
+                self.grd = folder_grd + '/rrexnum_grd.nc'
 
-            if '1d' in simul:
-                self.his = folder + '/HIS/RREXNUM200_1d_avg_' #1999-01-25-1999-01-29'
-                self.tfile=5
-                self.dtfile=86400
-                self.tend=100000
-            elif '1h' in simul:
-                self.his = folder + '/HIS/RREXNUM200_1h_avg_' #1999-01-25-1999-01-29'
-                self.tfile=24
-                self.dtfile=3600
-                self.tend=100000
+            self.model = 'croco'
+            self.digits = 5
+            
+
+            self.tstart=0
+            self.tend=10000
+            
+            if 'avg' in simul:
+                self.tfile=1
+                if 'mean' in simul:
+                    mean = '.mean.00005-00014'
+                    #mean = '.mean.00010-00049'        
+                    if 'vrt' in simul:
+                        self.his = folder + '/rrexnum200_diags_vrt_avg' + mean
+                    elif 'ek' in simul:
+                        self.his = folder +  '/rrexnum200_diags_ek_avg' + mean
+                    elif 'uv' in simul:
+                        self.his = folder + '/rrexnum200_diaM_avg' + mean
+                    elif 'ts' in simul:
+                        self.his = folder + '/rrexnum200_diaT_avg' + mean
+                    elif 'pv' in simul:
+                        self.his = folder + '/rrexnum200_diags_pv_avg' + mean
+                    elif 'wdia' in simul:
+                        self.his = folder + '/rrexnum200_diags_wdia_avg' + mean                   
+                    else:
+                        self.his = folder + '/rrexnum200_avg' + mean
+
+                    self.digits = 0
+                else:
+
+                    if 'vrt' in simul:
+                        self.his = folder + '/rrexnum200_diags_vrt_avg.'
+                    elif 'ek' in simul:
+                        self.his = folder +  '/rrexnum200_diags_ek_avg.'
+                    elif 'uv' in simul:
+                        self.his = folder + '/rrexnum200_diaM_avg.'
+                    elif 'ts' in simul:
+                        self.his = folder + '/rrexnum200_diaT_avg.'
+                    elif 'pv' in simul:
+                        self.his = folder + '/rrexnum200_diags_pv_avg.'
+                    elif 'wdia' in simul:
+                        self.his = folder + '/rrexnum200_diags_wdia_avg.'                    
+                    else:
+                        self.his = folder + '/rrexnum200_avg.'
+            else:
+                self.tfile=2
+                if 'vrt' in simul:
+                    self.his = folder +  '/rrexnum200_diags_vrt.'
+                elif 'ek' in simul:
+                    self.his = folder + '/rrexnum200_diags_ek.'
+                elif 'uv' in simul:
+                    self.his = folder +  '/rrexnum200_diaM.'
+                elif 'ts' in simul:
+                    self.his = folder +  '/rrexnum200_diaT.'
+                elif 'pv' in simul:
+                    self.his = folder +  '/rrexnum200_diags_pv.'
+                elif 'wdia' in simul:
+                    self.his = folder +  '/rrexnum200_diags_wdia.'
+                else:
+                    self.his = folder +  '/rrexnum200_his.'
+
+            
+
+# old version
+        # elif 'rrexnum200_old' in simul:
+        
+        #     self.realyear = True
+        #     self.realyear_origin = datetime(1979,1,1)
+        #     self.realyear_tstart = datetime(2008,8,26,12)
+
+        #     self.model = 'croco_xios'
+        #     self.digits = 0
+
+        #     folder= '/home/datawork-lops-rrex/tpicard/OUTPUTS_RREXNUM200'
+        #     self.grd= folder + '/HIS/rrexnum200_grid.nc'
+
+        #     if '1d' in simul:
+        #         self.his = folder + '/HIS/RREXNUM200_1d_avg_' #1999-01-25-1999-01-29'
+        #         self.tfile=5
+        #         self.dtfile=86400
+        #         self.tend=100000
+        #     elif '1h' in simul:
+        #         self.his = folder + '/HIS/RREXNUM200_1h_avg_' #1999-01-25-1999-01-29'
+        #         self.tfile=24
+        #         self.dtfile=3600
+        #         self.tend=100000
                 
         ##################
 

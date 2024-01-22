@@ -65,7 +65,7 @@ def nc_colormap(name):
     rgb=[]
 
     for i in range(len(numbers)//3):
-        rgb.append((np.float(np.int(numbers[3*i])/255.),np.float(np.int(numbers[3*i+1])/255.), np.float(np.int(numbers[3*i+2])/255.)))
+        rgb.append((float(int(numbers[3*i])/255.),float(int(numbers[3*i+1])/255.), float(int(numbers[3*i+2])/255.)))
 
     my_cmap = col.LinearSegmentedColormap.from_list('my_colormap',rgb,256)          
 
@@ -92,7 +92,7 @@ def nc_colormap_asym(name,ratio=2):
     rgb=[]
 
     for i in range(len(numbers)//3):
-        rgb.append((np.float(np.int(numbers[3*i])/255.),np.float(np.int(numbers[3*i+1])/255.), np.float(np.int(numbers[3*i+2])/255.)))
+        rgb.append((float(int(numbers[3*i])/255.),float(int(numbers[3*i+1])/255.), float(int(numbers[3*i+2])/255.)))
 
     print(len(numbers)//3, len(rgb))
     newrgb = rgb[:len(rgb)//2:ratio]
@@ -127,7 +127,7 @@ def nc_colormap_r(name):
     rgb=[]
 
     for i in range(len(numbers)//3):
-        rgb.append((np.float(np.int(numbers[3*i])/255.),np.float(np.int(numbers[3*i+1])/255.), np.float(np.int(numbers[3*i+2])/255.)))
+        rgb.append((float(int(numbers[3*i])/255.),float(int(numbers[3*i+1])/255.), float(int(numbers[3*i+2])/255.)))
 
     rgb = rgb[::-1]
 
@@ -161,9 +161,9 @@ def nc_colormap_for_mlab(name):
     rgb=np.zeros((len(numbers)//3,4))
 
     for i in range(len(numbers)//3):
-        rgb[i,0]=np.int(numbers[3*i])
-        rgb[i,1]=np.int(numbers[3*i+1])
-        rgb[i,2]=np.int(numbers[3*i+2])
+        rgb[i,0]=int(numbers[3*i])
+        rgb[i,1]=int(numbers[3*i+1])
+        rgb[i,2]=int(numbers[3*i+2])
         rgb[i,3]=255 #alpha Channel
         
     #my_cmap = col.LinearSegmentedColormap.from_list('my_colormap',rgb,256)          
@@ -191,7 +191,7 @@ def fsu_colormap():
         val = numbers[i].split(" ");
         while val.count('') > 0:
             val.remove('')
-        rgb.append((np.float(val[0]),np.float(val[1]), np.float(val[2])))
+        rgb.append((float(val[0]),float(val[1]), float(val[2])))
 
     my_cmap = col.LinearSegmentedColormap.from_list('my_colormap',rgb,256)          
 

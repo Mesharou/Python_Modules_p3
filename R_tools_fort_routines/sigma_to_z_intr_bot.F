@@ -39,9 +39,8 @@ C$    trd=omp_get_thread_num()
       jend=jmax !min( (trd+1)*chunk_size-1-margin, jmax )
 
 
-Cf2py intent(in) Lm,Mm,N, nz, z_r, z_w, rmask, var, z_lev, below, imin,jmin,kmin, FillValue
+Cf2py intent(in) Lm,Mm,N, nz,imin,jmin,kmin, z_r, z_w, rmask, var, z_lev,  FillValue
 Cf2py intent(out) var_zlv
-
 
 #ifdef VERBOSE
       write(*,'(2x,2A,3I3,2x,A,3I4)') 'sigma_to_z_intr: imin,jmin,',

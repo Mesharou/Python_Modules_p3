@@ -210,7 +210,9 @@ def vinterp(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, floattyp
 #######################################################
 
 
-def vinterp_2d(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, floattype=np.float64,below=None,verbo=False,**kwargs):
+def vinterp_2d(var, depths, z_r, z_w=None, mask=None,\
+               imin=0,jmin=0,kmin=1, floattype=np.float64,\
+               below=None,verbo=False,**kwargs):
 
     
     if mask is None:  mask = np.ones((var.shape[0]), order='F', dtype=floattype); mask[z_r[:,-1]==0] = 0
@@ -227,7 +229,10 @@ def vinterp_2d(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, float
 
 
     below=0.
-    vnew=toolsF.sigma_to_z_intr_bot_2d(z_r, z_w,mask,var,newz,below,9999.)
+    try:
+        vnew=toolsF.sigma_to_z_intr_bot_2d(z_r, z_w,mask,var,newz,below,9999.)
+    except:
+        vnew=toolsF.sigma_to_z_intr_bot_2d(imin,kmin,z_r, z_w,mask,var,newz,below,9999.)
 
     vnew[np.abs(vnew)==9999.]=np.nan
 

@@ -147,6 +147,10 @@ c---# include "R_tools_fort_routines_gula/get_diagsPV_sol2.F"
 
 # include "R_tools_fort_routines_gula/get_tracer_evolution.F"
 
+# include "R_tools_fort_routines_gula/get_tracer_advection.F"
+
+# include "R_tools_fort_routines_gula/get_tracer_advection_croco_c6.F"
+
 # include "R_tools_fort_routines_gula/get_uv_evolution.F"
 
 # include "R_tools_fort_routines_gula/get_uv_evolution_old.F"

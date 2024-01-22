@@ -3511,11 +3511,8 @@ class var(object):
 #Compute  tendency terms fron the tracer equation
 #######################################################
 
-
-
     def get_tracer_evolution(self,simul,**kwargs):
     
-
         #######################################################
         if 'pert' in  kwargs: 
             pert = kwargs['pert']
@@ -3553,9 +3550,7 @@ class var(object):
             pn = simul.pn
             f = simul.f
             mask = simul.mask
-            
 
-           
         #if 'depths' in  kwargs: 
             #depths = kwargs['depths']
         #else: 
@@ -3585,7 +3580,13 @@ class var(object):
             omega = tools.nanbnd(toolsF.get_omega (u,v,z_r,z_w,pm,pn))
         
         AKt = self.load('AKt',ncfile,simul,coord=coord,depths=depths_w)
-        hbls = self.load('hbls',ncfile,simul,coord=coord)
+        print('AKt.shape',AKt.shape)
+        
+        try:
+            hbls = self.load('hbls',ncfile,simul,coord=coord)
+        except:
+            print('recomputing hbls')
+            hbls = var('hbls_akv',simul,coord=coord).data  
 
         t=np.zeros((u.shape[0]+1,u.shape[1],u.shape[2],2))
         t[:,:,:,0] = self.load('temp',ncfile,simul,coord=coord,depths=depths)
@@ -3609,7 +3610,6 @@ class var(object):
                              ,stflx, srflx,  hbls,  swr_frac) 
         #ghat= z_r*0.              
      
-    
         (TXadv,TYadv,TVadv,THdiff,TVmix,TForc) = \
                 toolsF_g.get_tracer_evolution (u,v, z_r,z_w,pm,pn\
                              ,simul.dt_model,t,stflx, srflx, ghat, swr_frac, omega, AKt) 
@@ -3621,9 +3621,6 @@ class var(object):
              tools.nanbnd(THdiff,2),      
              tools.nanbnd(TVmix,2),
              tools.nanbnd(TForc,2)]        
-             
-             
-             
              
         #print 'computing old '
         #(TXadv,TYadv,TVadv,THdiff,TVmix,TForc) = \
@@ -3640,9 +3637,183 @@ class var(object):
 
 
 
+#######################################################
+#Compute tendency terms for advective terms
+#######################################################
+
+    def get_tracer_advection(self,simul,**kwargs):
+    
+        #######################################################
+            
+        if 'coord' in  kwargs: 
+            coord = kwargs['coord']
+            [ny1i,ny2i,nx1i,nx2i] = coord[0:4]
+            [ny1,ny2,nx1,nx2] = simul.coord[0:4]   
+            print('original coord', coord)
+            
+            # We need at leat 4 pts to compute advection:
+            addx1,addy1,addx2,addy2 =0,0,None,None
+            if (ny2i-ny1i)<6: 
+                addy=6-(ny2i-ny1i); addy1= (addy/2); addy2=-(addy/2+addy%2)
+                ny1i=ny1i-addy1; ny2i=ny2i-addy2
+            if (nx2i-nx1i)<6: 
+                addx=6-(nx2i-nx1i); addx1= (addx/2); addx2=-(addx/2+addx%2)
+                nx1i=nx1i-addx1; nx2i=nx2i-addx2      
+            coord = [ny1i,ny2i,nx1i,nx2i]        
+            print('temporary coord', coord)
+
+            pm = np.asfortranarray(simul.pm[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+            pn = np.asfortranarray(simul.pn[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+            f = np.asfortranarray(simul.f[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+            mask = np.asfortranarray(simul.mask[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+        else:
+             # We need at leat 4 pts to compute advection:
+             # But we can't enlarge the domain...
+            addx1,addy1,addx2,addy2 =0,0,None,None
+            
+            coord = simul.coord[0:4]
+            pm = simul.pm
+            pn = simul.pn
+            f = simul.f
+            mask = simul.mask
+            
+
+        depths = simul.coordmax[4]
+        depths_w = np.concatenate((simul.coordmax[4],[simul.coordmax[4][-1]+1]))
+
+        #######################################################
+ 
+        ncfile = Dataset(simul.ncfile, 'r', format='NETCDF3_CLASSIC')
+            
+        #######################################################
+        [z_r,z_w] = tools.get_depths(simul,coord=coord,depths=depths)
+        
+        u = self.load('u',ncfile,simul,coord=coord,depths=depths)
+        v = self.load('v',ncfile,simul,coord=coord,depths=depths)
+
+        try:
+            omega = self.load('omega',ncfile,simul,coord=coord,depths=depths_w)
+        except:
+            print('no omega in file, computing')
+            omega = tools.nanbnd(toolsF.get_omega (u,v,z_r,z_w,pm,pn))
+    
+        t=np.zeros((u.shape[0]+1,u.shape[1],u.shape[2],2))
+        t[:,:,:,0] = self.load('temp',ncfile,simul,coord=coord,depths=depths)
+        t[:,:,:,1] = self.load('salt',ncfile,simul,coord=coord,depths=depths)
+        
+        Hz =  z_w[:,:,1:] - z_w[:,:,:-1]
+
+        (TXadv,TYadv,TVadv) = \
+                toolsF_g.get_tracer_advection (u,v, z_r,z_w,pm,pn\
+                             ,simul.dt_model,t,omega) 
+            
+        [TXadv,TYadv,TVadv] = \
+             [tools.nanbnd(TXadv,2),
+              tools.nanbnd(TYadv,2),     
+              tools.nanbnd(TVadv,2)]        
+             
+        if len(TXadv.shape)==4:
+            return [TXadv[addx1:addx2,addy1:addy2,:,:],\
+                    TYadv[addx1:addx2,addy1:addy2,:,:],\
+                    TVadv[addx1:addx2,addy1:addy2,:,:]]
+        elif len(TXadv.shape)==3:
+            return [TXadv[addx1:addx2,addy1:addy2,:],\
+                    TYadv[addx1:addx2,addy1:addy2,:],\
+                    TVadv[addx1:addx2,addy1:addy2,:]]
+        
+        
+
 
 #######################################################
-#Compute tendency terms fron the tracer equation
+#Compute tendency terms for advective terms
+#######################################################
+
+    def get_tracer_advection_croco_c6(self,simul,**kwargs):
+    
+        #######################################################
+            
+        if 'coord' in  kwargs: 
+            coord = kwargs['coord']
+            [ny1i,ny2i,nx1i,nx2i] = coord[0:4]
+            [ny1,ny2,nx1,nx2] = simul.coord[0:4]   
+            print('original coord', coord)
+            
+            # We need at leat 4 pts to compute advection:
+            addx1,addy1,addx2,addy2 =0,0,None,None
+            if (ny2i-ny1i)<6: 
+                addy=6-(ny2i-ny1i); addy1= (addy/2); addy2=-(addy/2+addy%2)
+                ny1i=ny1i-addy1; ny2i=ny2i-addy2
+            if (nx2i-nx1i)<6: 
+                addx=6-(nx2i-nx1i); addx1= (addx/2); addx2=-(addx/2+addx%2)
+                nx1i=nx1i-addx1; nx2i=nx2i-addx2      
+            coord = [ny1i,ny2i,nx1i,nx2i]        
+            print('temporary coord', coord)
+
+            pm = np.asfortranarray(simul.pm[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+            pn = np.asfortranarray(simul.pn[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+            f = np.asfortranarray(simul.f[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+            mask = np.asfortranarray(simul.mask[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1])
+        else:
+             # We need at leat 4 pts to compute advection:
+             # But we can't enlarge the domain...
+            addx1,addy1,addx2,addy2 =0,0,None,None
+            
+            coord = simul.coord[0:4]
+            pm = simul.pm
+            pn = simul.pn
+            f = simul.f
+            mask = simul.mask
+            
+
+        depths = simul.coordmax[4]
+        depths_w = np.concatenate((simul.coordmax[4],[simul.coordmax[4][-1]+1]))
+
+        #######################################################
+ 
+        ncfile = Dataset(simul.ncfile, 'r', format='NETCDF3_CLASSIC')
+            
+        #######################################################
+        [z_r,z_w] = tools.get_depths(simul,coord=coord,depths=depths)
+        
+        u = self.load('u',ncfile,simul,coord=coord,depths=depths)
+        v = self.load('v',ncfile,simul,coord=coord,depths=depths)
+
+        try:
+            omega = self.load('omega',ncfile,simul,coord=coord,depths=depths_w)
+        except:
+            print('no omega in file, computing')
+            omega = tools.nanbnd(toolsF.get_omega (u,v,z_r,z_w,pm,pn))
+    
+        t=np.zeros((u.shape[0]+1,u.shape[1],u.shape[2],2))
+        t[:,:,:,0] = self.load('temp',ncfile,simul,coord=coord,depths=depths)
+        t[:,:,:,1] = self.load('salt',ncfile,simul,coord=coord,depths=depths)
+        
+        Hz =  z_w[:,:,1:] - z_w[:,:,:-1]
+
+        (TXadv,TYadv,TVadv) = \
+                toolsF_g.get_tracer_advection_croco_c6 (u,v, z_r,z_w,pm,pn\
+                             ,simul.dt_model,t,omega,mask) 
+            
+        [TXadv,TYadv,TVadv] = \
+             [tools.nanbnd(TXadv,2),
+              tools.nanbnd(TYadv,2),     
+              tools.nanbnd(TVadv,2)]        
+             
+        if len(TXadv.shape)==4:
+            return [TXadv[addx1:addx2,addy1:addy2,:,:],\
+                    TYadv[addx1:addx2,addy1:addy2,:,:],\
+                    TVadv[addx1:addx2,addy1:addy2,:,:]]
+        elif len(TXadv.shape)==3:
+            return [TXadv[addx1:addx2,addy1:addy2,:],\
+                    TYadv[addx1:addx2,addy1:addy2,:],\
+                    TVadv[addx1:addx2,addy1:addy2,:]]
+        
+        
+
+
+
+#######################################################
+#Compute tendency terms from the tracer equation
 #######################################################
 
     def get_tend(self,simul,**kwargs):

@@ -34,14 +34,19 @@ PROGRAMP  = pyticles_3d_sig_sa
 
 all:
 	$(CXX) $(SRCS) $(RCS)
-	$(CXX) $(SRCSGU) $(RCSGU)
-	$(CXX) $(SRCSGI) $(RCSGI)
+	$(CXX) $(SRCSGU) $(RCSGU
+#	$(CXX) $(SRCSGI) $(RCSGI)
 	$(FC) $(FCFLAGS) -m $(PROGRAM) $(RCS)
 	$(FC) $(FCFLAGS) -m $(PROGRAMGU) $(RCSGU)
 	$(FC) $(FCFLAGS) -m $(PROGRAMGI) $(RCSGI)
 #	$(CXX) $(SRCSC) $(RCSC)
 #	$(FC) $(FCFLAGS) -m $(PROGRAMC) $(RCSC)
 	f2py -DF2PY_REPORT_ON_ARRAY_COPY=1 -c -m romstoolsfort_old romstoolsfort_old.F
+
+
+gula:
+	$(CXX) $(SRCSGU) $(RCSGU)
+	$(FC) $(FCFLAGS) -m $(PROGRAMGU) $(RCSGU)
 	
 gigatl:
 	$(CXX) $(SRCSGI) $(RCSGI)

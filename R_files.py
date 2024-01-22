@@ -80,7 +80,8 @@ class load(object):
 ###################################################################################
 #   Main 
 ###################################################################################
-    def __init__(self,simulname=None,time=None, floattype=float, light = False, light_bulk = False, touchfile=True, output =True, **kwargs):
+    def __init__(self,simulname=None,time=None, floattype=float, light = False,\
+                  light_bulk = False, touchfile=True, output =True, **kwargs):
 
         """
 
@@ -4688,7 +4689,7 @@ class files(object):
             
             try:
                 if 'curie' in os.getenv('HOSTNAME') or 'irene' in os.getenv('HOSTNAME'):
-                    folder0='/ccc/scratch/cont003/gch0401/gulaj/GIGATL1/'
+                    folder0='/ccc/scratch/cont003/gen12051/gulaj/GIGATL1/'
                 else:
                     folder0= '/home/datawork-lops-megatl/'
             except:
@@ -4722,6 +4723,14 @@ class files(object):
                 folder = folder0 + 'zoom_for_malvinas/'
                 self.grd= folder + 'gigatl1_1h_tides_malvinas_2009-01-01.nc'
                 region = 'malvinas'
+            elif 'iceland' in simul:
+                folder = folder0 + 'zoom_for_iceland/'
+                self.grd= folder + 'gigatl1_1h_tides_iceland_2009-01-01.nc'
+                region = 'iceland'
+            elif 'iberia' in simul:
+                folder = folder0 + 'zoom_for_iberia/'
+                self.grd= folder + 'gigatl1_1h_tides_iberia_daily_2008-03-14.nc'
+                region = 'iberia'
             elif 'equator' in simul:
                 #folder = folder0 + 'zoom_for_equator/' #for irene
                 folder = folder0 + 'Equator/' #for datarmor
@@ -4743,13 +4752,15 @@ class files(object):
                 region = 'latmix'
                 
             if 'daily' in  simul:
-                self.his = folder + 'gigatl1_1h_tides_' + region + '_'
+                #self.his = folder + 'gigatl1_1h_tides_' + region + '_'
+                self.his = folder + 'gigatl1_1h_tides_' + region + '_daily_'
                 self.tfile=1
                 self.dtfile=24*3600
                 self.tend=100000
                 self.model = 'croco_gigatl1'
                 self.digits = 0
-                self.fileformat = '.daily.nc'
+                #self.fileformat = '.daily.nc'
+                self.fileformat = '.nc' 
             elif '12h' in  simul:
                 self.his = folder + 'gigatl1_1h_tides_' + region + '_'
                 self.tfile=1
@@ -5462,6 +5473,128 @@ class files(object):
 
         ##################
 
+        elif 'rrexnum50' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(1979,1,1)
+            self.realyear_tstart = datetime(2008,8,26,12)
+
+            if 'rrexnum50_UP3' in simul:
+                folder_name= 'RREXNUM50_UP3/'
+            elif 'rrexnum50_GEO' in simul:
+                folder_name= 'RREXNUM50_GEO/'
+            elif 'rrexnum50_NOFILT2' in simul:
+                folder_name= 'RREXNUM50_NOFILT2/'
+            elif 'rrexnum50_NOFILT' in simul:
+                folder_name= 'RREXNUM50_NOFILT/'
+            elif 'rrexnum50_NOIMP' in simul:
+                folder_name= 'RREXNUM50_NOIMP/'
+            elif 'rrexnum50_WENO5' in simul:
+                folder_name= 'RREXNUM50_WENO5/'
+            elif 'rrexnum50_C4' in simul:
+                folder_name= 'RREXNUM50_C4/'
+            elif 'rrexnum50_RSVWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUM50_RSVWENO5_NOFILT/'
+            elif 'rrexnum50_RSWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUM50_RSWENO5_NOFILT/'
+            elif 'rrexnum50_RSUP5_NOFILT_notides' in simul:
+                folder_name= 'RREXNUM50_RSUP5_NOFILT_notides/'
+            elif 'rrexnum50_RSUP5_NOFILT_noslopemax' in simul:
+                folder_name= 'RREXNUM50_RSUP5_NOFILT_noslopemax/'
+            elif 'rrexnum50_RSUP5_NOFILT_weakslope' in simul:
+                folder_name= 'RREXNUM50_RSUP5_NOFILT_weakslope/'
+            elif 'rrexnum50_RSUP5_NOFILT_nomax' in simul:
+                folder_name= 'RREXNUM50_RSUP5_NOFILT_nomax/'
+            elif 'rrexnum50_RSUP5_NOFILT' in simul:
+                folder_name= 'RREXNUM50_RSUP5_NOFILT/'
+            elif 'rrexnum50_notides' in simul:
+                folder_name= 'RREXNUM50_notides/'
+            else:
+                folder_name= 'RREXNUM50/'
+                
+            if 'tracer' in simul:
+                folder_name= folder_name[:-1] + '_T/'
+
+            if os.getenv('HOSTNAME') is None:
+                folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name + 'HIS/'
+                folder_grd = libra +'/gula/ROMS/Simulations/RREXNUM'
+            else:
+                if 'tracer' in simul:
+                    folder = '/home/datawork-lops-megatl/RREXNUM/' + folder_name + 'HIS/'
+                else:
+                    folder = '/home/datawork-lops-rrex/jgula/' + folder_name + 'HIS/'
+                folder_grd = '/home/datawork-lops-rrex/jgula/INIT_RREXNUM50/GRD'
+                
+            self.grd = folder_grd + '/rrexnum_grd.nc'
+            
+            self.model = 'croco'
+            self.digits = 5
+            
+
+            self.tstart=0
+            self.tend=10000
+            
+            if 'avg' in simul:
+                self.tfile=1
+                if 'mean' in simul:
+                    if 'tracer' in simul:
+                        #mean = '.mean.00005-00014' 
+                        mean = '.mean.00010-00049'
+                    else:
+                        #mean = '.mean.00005-00014'
+                        mean = '.mean.00010-00049'
+                        mean = '.mean'                        
+                    if 'vrt' in simul:
+                        self.his = folder + '/rrexnum50_diags_vrt_avg' + mean
+                    elif 'ek' in simul:
+                        self.his = folder +  '/rrexnum50_diags_ek_avg' + mean
+                    elif 'uv' in simul:
+                        self.his = folder + '/rrexnum50_diaM_avg' + mean
+                    elif 'ts' in simul:
+                        self.his = folder + '/rrexnum50_diaT_avg' + mean
+                    elif 'pv' in simul:
+                        self.his = folder + '/rrexnum50_diags_pv_avg' + mean
+                    elif 'wdia' in simul:
+                        self.his = folder + '/rrexnum50_diags_wdia_avg' + mean                   
+                    else:
+                        self.his = folder + '/rrexnum50_avg' + mean
+
+                    self.digits = 0
+                else:
+
+                    if 'vrt' in simul:
+                        self.his = folder + '/rrexnum50_diags_vrt_avg.'
+                    elif 'ek' in simul:
+                        self.his = folder +  '/rrexnum50_diags_ek_avg.'
+                    elif 'uv' in simul:
+                        self.his = folder + '/rrexnum50_diaM_avg.'
+                    elif 'ts' in simul:
+                        self.his = folder + '/rrexnum50_diaT_avg.'
+                    elif 'pv' in simul:
+                        self.his = folder + '/rrexnum50_diags_pv_avg.'
+                    elif 'wdia' in simul:
+                        self.his = folder + '/rrexnum50_diags_wdia_avg.'                    
+                    else:
+                        self.his = folder + '/rrexnum50_avg.'
+            else:
+                self.tfile=2
+                if 'vrt' in simul:
+                    self.his = folder +  '/rrexnum50_diags_vrt.'
+                elif 'ek' in simul:
+                    self.his = folder + '/rrexnum50_diags_ek.'
+                elif 'uv' in simul:
+                    self.his = folder +  '/rrexnum50_diaM.'
+                elif 'ts' in simul:
+                    self.his = folder +  '/rrexnum50_diaT.'
+                elif 'pv' in simul:
+                    self.his = folder +  '/rrexnum50_diags_pv.'
+                elif 'wdia' in simul:
+                    self.his = folder +  '/rrexnum50_diags_wdia.'
+                else:
+                    self.his = folder +  '/rrexnum50_his.'
+
+        ##################
+
         elif 'rrexnum100' in simul:
         
             self.realyear = True
@@ -5482,6 +5615,10 @@ class files(object):
                 folder_name= 'RREXNUM100_WENO5/'
             elif 'rrexnum100_C4' in simul:
                 folder_name= 'RREXNUM100_C4/'
+            elif 'rrexnum100_RSVWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUM100_RSVWENO5_NOFILT/'
+            elif 'rrexnum100_RSWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUM100_RSWENO5_NOFILT/'
             elif 'rrexnum100_RSUP5_NOFILT_notides' in simul:
                 folder_name= 'RREXNUM100_RSUP5_NOFILT_notides/'
             elif 'rrexnum100_RSUP5_NOFILT_noslopemax' in simul:
@@ -5523,11 +5660,12 @@ class files(object):
                 self.tfile=1
                 if 'mean' in simul:
                     if 'tracer' in simul:
-                        mean = '.mean.00005-00014' 
-                        #mean = '.mean.00020-00039'
+                        #mean = '.mean.00005-00014' 
+                        mean = '.mean.00010-00049'
                     else:
-                        mean = '.mean.00005-00014'
-                        #mean = '.mean.00010-00049'
+                        #mean = '.mean.00005-00014'
+                        mean = '.mean.00010-00049'
+                        mean = '.mean'     
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum100_diags_vrt_avg' + mean
                     elif 'ek' in simul:
@@ -5615,10 +5753,16 @@ class files(object):
                 folder_name= 'RREXNUM200_WENO5/'
             elif 'rrexnum200_C4' in simul:
                 folder_name= 'RREXNUM200_C4/'
+            elif 'rrexnum200_RSVWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUM200_RSVWENO5_NOFILT/'   
+            elif 'rrexnum200_RSWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUM200_RSWENO5_NOFILT/'
             elif 'rrexnum200_RSUP5_NOFILT_notides' in simul:
                 folder_name= 'RREXNUM200_RSUP5_NOFILT_notides/'
             elif 'rrexnum200_RSUP5_NOFILT' in simul:
                 folder_name= 'RREXNUM200_RSUP5_NOFILT/'
+            elif 'rrexnum200_RSUP5_FILT1h' in simul:
+                folder_name= 'RREXNUM200_RSUP5_FILT1h/'   
             elif 'rrexnum200_notides' in simul:
                 folder_name= 'RREXNUM200_notides/'
             elif 'rrexnums200_RSUP5_NOFILT' in simul:
@@ -5654,8 +5798,9 @@ class files(object):
             if 'avg' in simul:
                 self.tfile=1
                 if 'mean' in simul:
-                    mean = '.mean.00005-00014'
-                    #mean = '.mean.00010-00049'        
+                    #mean = '.mean.00005-00014'
+                    mean = '.mean.00010-00049'   
+                    mean = '.mean'     
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum200_diags_vrt_avg' + mean
                     elif 'ek' in simul:
@@ -5830,7 +5975,7 @@ class files(object):
 
             if 'mean' in simul:
                 if 'var' in simul:
-                    self.his = folder + '/PLAIN_12h_inst_2008_meanvaruv'
+                    self.his = folder + '/plain_his.meanvaruv'
                 elif 'vrt' in simul:
                     self.his = folder + '/plain_diags_vrt_avg.mean'
                 elif 'ek' in simul:
@@ -5888,6 +6033,30 @@ class files(object):
                 self.tfile=2
                 self.dtfile=12*3600
                 self.tend=100000
+
+        ##################
+
+        elif 'porcup' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(1979,1,1)
+            self.realyear_tstart = datetime(2008,8,26,12)
+
+            self.model = 'croco'
+            self.digits = 5
+            
+            if os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/PORCUP/'
+                self.grd=folder + 'porcup_grd.nc'
+            else:
+                folder= '/home/datawork-lops-osi/jgula/PORCUP/HIS/'
+                self.grd= '/home/datawork-lops-osi/jgula/PORCUP/INIT/porcup_grd.nc'
+
+            self.his = folder + '/porcup_his.'
+            
+            self.tfile=2
+            self.dtfile=12*3600
+            self.tend=100000
 
         ##################
 

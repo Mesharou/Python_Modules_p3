@@ -180,7 +180,10 @@ def vinterp(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, floattyp
         
     if bounded:
         if verbo: print("data bounded")
-        vnew=toolsF.sigma_to_z_intr_bounded(z_r, z_w,mask,var,newz,9999.)
+        try:
+            vnew=toolsF.sigma_to_z_intr_bounded(z_r, z_w,mask,var,newz,9999.)
+        except:
+            vnew=toolsF.sigma_to_z_intr_bounded(imin,jmin,kmin,z_r, z_w,mask,var,newz,9999.)
     elif interp_bot==1:
         if verbo: print("data will be interpolated below ground")
         below=10000.
@@ -197,7 +200,10 @@ def vinterp(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, floattyp
             vnew=toolsF.sigma_to_z_intr_sfc(imin,jmin,kmin,z_r, z_w,mask,var,newz,9999.)
     else:
         if verbo: print("no interpolation below ground or above surface")
-        vnew=toolsF.sigma_to_z_intr(z_r, z_w,mask,var,newz,9999.)   	
+        try:
+            vnew=toolsF.sigma_to_z_intr(z_r, z_w,mask,var,newz,9999.)   	
+        except:
+            vnew=toolsF.sigma_to_z_intr(imin,jmin,kmin,z_r, z_w,mask,var,newz,9999.)   	
 
     vnew[np.abs(vnew)==9999.]=np.nan
 

@@ -3213,6 +3213,8 @@ class files(object):
                 folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_dev_megatl'
             elif 'diagnostics_tracer_230419' in simul:
                 folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_diagnostics_tracer_230419'
+            elif 'diagnostics_tracer_240228' in simul:
+                folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_diagnostics_energy_240228'
             elif 'tracer' in simul:
                 folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_tracer'
             else:
@@ -4721,7 +4723,7 @@ class files(object):
                 region = 'gulfstream'
             elif 'malvinas' in simul:
                 folder = folder0 + 'zoom_for_malvinas/'
-                self.grd= folder + 'gigatl1_1h_tides_malvinas_2009-01-01.nc'
+                self.grd= folder + 'gigatl1_1h_tides_malvinas_2009-08-01.nc'
                 region = 'malvinas'
             elif 'iceland' in simul:
                 folder = folder0 + 'zoom_for_iceland/'
@@ -5537,13 +5539,22 @@ class files(object):
             if 'avg' in simul:
                 self.tfile=1
                 if 'mean' in simul:
-                    if 'tracer' in simul:
-                        #mean = '.mean.00005-00014' 
+                    if '00014' in simul:
+                        mean = '.mean.00005-00014'
+                    elif '00039' in simul:
+                        mean = '.mean.00020-00039'
+                    elif '00049' in simul:
                         mean = '.mean.00010-00049'
+                    elif '00069' in simul:
+                        mean = '.mean.00010-00069'
+                    elif '00139' in simul:
+                        mean = '.mean.00010-000139'
+                    elif '00179' in simul:
+                        mean = '.mean.00010-000179'
+                    elif '00229' in simul:
+                        mean = '.mean.00010-000229'
                     else:
-                        #mean = '.mean.00005-00014'
-                        mean = '.mean.00010-00049'
-                        mean = '.mean'                        
+                        mean = '.mean'                       
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum50_diags_vrt_avg' + mean
                     elif 'ek' in simul:
@@ -5659,13 +5670,22 @@ class files(object):
             if 'avg' in simul:
                 self.tfile=1
                 if 'mean' in simul:
-                    if 'tracer' in simul:
-                        #mean = '.mean.00005-00014' 
+                    if '00014' in simul:
+                        mean = '.mean.00005-00014'
+                    elif '00039' in simul:
+                        mean = '.mean.00020-00039'
+                    elif '00049' in simul:
                         mean = '.mean.00010-00049'
+                    elif '00069' in simul:
+                        mean = '.mean.00010-00069'
+                    elif '00139' in simul:
+                        mean = '.mean.00010-000139'
+                    elif '00179' in simul:
+                        mean = '.mean.00010-000179'
+                    elif '00229' in simul:
+                        mean = '.mean.00010-000229'     
                     else:
-                        #mean = '.mean.00005-00014'
-                        mean = '.mean.00010-00049'
-                        mean = '.mean'     
+                        mean = '.mean'       
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum100_diags_vrt_avg' + mean
                     elif 'ek' in simul:
@@ -5767,6 +5787,8 @@ class files(object):
                 folder_name= 'RREXNUM200_notides/'
             elif 'rrexnums200_RSUP5_NOFILT' in simul:
                 folder_name= 'RREXNUMS200_RSUP5_NOFILT/'   
+            elif 'rrexnumsb200_RSUP5_NOFILT' in simul:
+                folder_name= 'RREXNUMSB200_RSUP5_NOFILT/'   
             else:
                 folder_name= 'RREXNUM200/'
                 
@@ -5798,13 +5820,26 @@ class files(object):
             if 'avg' in simul:
                 self.tfile=1
                 if 'mean' in simul:
-                    #mean = '.mean.00005-00014'
-                    mean = '.mean.00010-00049'   
-                    mean = '.mean'     
+                    if '00014' in simul:
+                        mean = '.mean.00005-00014'
+                    elif '00039' in simul:
+                        mean = '.mean.00020-00039'
+                    elif '00049' in simul:
+                        mean = '.mean.00010-00049'
+                    elif '00069' in simul:
+                        mean = '.mean.00010-00069'
+                    elif '00139' in simul:
+                        mean = '.mean.00010-000139'
+                    elif '00179' in simul:
+                        mean = '.mean.00010-000179'
+                    elif '00229' in simul:
+                        mean = '.mean.00010-000229'
+                    else:
+                        mean = '.mean'     
                     if 'vrt' in simul:
                         self.his = folder + '/rrexnum200_diags_vrt_avg' + mean
                     elif 'ek' in simul:
-                        self.his = folder +  '/rrexnum200_diags_ek_avg' + mean
+                        self.his = folder + '/rrexnum200_diags_ek_avg' + mean
                     elif 'uv' in simul:
                         self.his = folder + '/rrexnum200_diaM_avg' + mean
                     elif 'ts' in simul:
@@ -6060,12 +6095,34 @@ class files(object):
 
         ##################
 
+        elif 'malvin' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(1979,1,1)
+            self.realyear_tstart = datetime(2008,8,26,12)
+
+            self.model = 'croco'
+            self.digits = 5
+            
+            if os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/MALVIN/'
+                self.grd=folder + 'malvin_grd.nc'
+            else:
+                folder= '/home/datawork-lops-osi/jgula/PORCUP/HIS/'
+                self.grd= '/home/datawork-lops-osi/jgula/PORCUP/INIT/porcup_grd.nc'
+
+            self.his = folder + '/porcup_his.'
+            
+            self.tfile=2
+            self.dtfile=12*3600
+            self.tend=100000
+            
+        ##################
+
         elif 'GSUP5' in simul:
 
             self.model = 'croco'
             self.digits = 0
-
-            
             
             if os.getenv('HOSTNAME') is None:
                 folder= libra +'/gula/ROMS/Simulations/GSUP5/'

@@ -150,8 +150,8 @@ class var(object):
     'stretching': ['stretching', ' ' ,[0,0,2]],\
     'pvr': ['Potential Vorticity on rho levels', 'PVU' ,[1,1,1]],\
     'Ri': ['Richardson Number', ' ', [0,0,0]],\
-    'dzu': ['Vertical shear of U', ' ', [1,0,0]],\
-    'dzv': ['Vertical shear of V', ' ', [0,1,0]],\
+    'dzu': ['Vertical shear of U', ' ', [0,0,0]],\
+    'dzv': ['Vertical shear of V', ' ', [0,0,0]],\
     'dzu2': ['Vertical shear amplitude', ' ', [0,0,0]],\
     'kdzu': ['AKv*(du/dz)', ' ', [0,0,0]],\
     'kdzv': ['AKv*(dv/dz)', ' ', [0,0,0]],\

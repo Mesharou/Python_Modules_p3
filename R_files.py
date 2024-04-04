@@ -2833,7 +2833,7 @@ class files(object):
 
         ##################
         
-        elif 'rockall' in simul or 'ROCK_chd' in simul:
+        elif 'gigatl1' not in simul and 'rockall' in simul or 'ROCK_chd' in simul:
 
             self.realyear = True
             self.realyear_origin = datetime(1999,1,1)
@@ -4691,7 +4691,7 @@ class files(object):
             
             try:
                 if 'curie' in os.getenv('HOSTNAME') or 'irene' in os.getenv('HOSTNAME'):
-                    folder0='/ccc/scratch/cont003/gen12051/gulaj/GIGATL1/'
+                    folder0='/ccc/scratch/cont003/gen7638/gulaj/GIGATL1/'
                 else:
                     folder0= '/home/datawork-lops-megatl/'
             except:
@@ -4729,6 +4729,11 @@ class files(object):
                 folder = folder0 + 'zoom_for_iceland/'
                 self.grd= folder + 'gigatl1_1h_tides_iceland_2009-01-01.nc'
                 region = 'iceland'
+            elif 'rockall' in simul:
+                #folder = folder0 + 'zoom_for_rockall/'
+                folder = folder0 + 'rockall/'
+                self.grd= folder + 'gigatl1_1h_tides_rockall_1h_2009-01-01.nc'
+                region = 'rockall_1h'                
             elif 'iberia' in simul:
                 folder = folder0 + 'zoom_for_iberia/'
                 self.grd= folder + 'gigatl1_1h_tides_iberia_daily_2008-03-14.nc'
@@ -6093,6 +6098,30 @@ class files(object):
             self.dtfile=12*3600
             self.tend=100000
 
+        ##################
+
+        elif 'rotrou' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(1979,1,1)
+            self.realyear_tstart = datetime(2008,8,26,12)
+
+            self.model = 'croco'
+            self.digits = 5
+            
+            if os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/ROTROU/'
+                self.grd=folder + 'rotrou_grd.nc'
+            else:
+                folder= '/home/datawork-lops-megatl/rockall/'
+                self.grd= '/home/datawork-lops-megatl/rockall/rotrou_grd.nc'
+
+            self.his = folder + '/rotrou_his.'
+            
+            self.tfile=2
+            self.dtfile=12*3600
+            self.tend=100000
+            
         ##################
 
         elif 'malvin' in simul:

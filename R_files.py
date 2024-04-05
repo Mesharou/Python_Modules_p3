@@ -4732,7 +4732,7 @@ class files(object):
             elif 'rockall' in simul:
                 #folder = folder0 + 'zoom_for_rockall/'
                 folder = folder0 + 'rockall/'
-                self.grd= folder + 'gigatl1_1h_tides_rockall_1h_2009-01-01.nc'
+                self.grd= folder + 'gigatl1_1h_tides_rockall_1h_2008-08-26.nc'
                 region = 'rockall_1h'                
             elif 'iberia' in simul:
                 folder = folder0 + 'zoom_for_iberia/'
@@ -5132,42 +5132,42 @@ class files(object):
                 self.model = 'croco'
                 
             elif 'surf' in simul:
-                self.his = folder + 'GIGATL3_1h_inst_surf_' #1999-01-25-1999-01-29'
+                self.his = folder + 'SURF/GIGATL3_1h_inst_surf_' #1999-01-25-1999-01-29'
                 self.tfile=120
                 self.dtfile=3600
                 self.tend=100000
             elif 'hourly' in simul:
-                self.his = folder + 'GIGATL3_1h_avg_3d_' #1999-01-25-1999-01-29'
+                self.his = folder + '1h_avg/GIGATL3_1h_avg_3d_' #1999-01-25-1999-01-29'
                 self.tfile=120
                 self.dtfile=3600
                 self.tend=100000
             elif 'M' in simul or 'UV' in simul or 'uv' in simul and 'uvbot' not in simul:
-                self.his = folder + 'GIGATL3_5d_M_' #1999-01-25-1999-01-29'
+                self.his = folder + 'M/GIGATL3_5d_M_' #1999-01-25-1999-01-29'
                 self.tfile=1
                 self.dtfile=5*24*3600
                 self.tend=10000
             elif 'vrt' in simul or 'VRT' in simul:
-                self.his = folder + 'GIGATL3_5d_VRT_' #1999-01-25-1999-01-29'
+                self.his = folder + 'VRT/GIGATL3_5d_VRT_' #1999-01-25-1999-01-29'
                 self.tfile=1
                 self.dtfile=5*24*3600
                 self.tend=10000
             elif 'KE' in simul or 'ke' in simul:
-                self.his = folder + 'GIGATL3_5d_KE_' #1999-01-25-1999-01-29'
+                self.his = folder + 'KE/GIGATL3_5d_KE_' #1999-01-25-1999-01-29'
                 self.tfile=1
                 self.dtfile=5*24*3600
                 self.tend=10000
             elif 'TS' in simul or 'ts' in simul:
-                self.his = folder + 'GIGATL3_5d_TS_' #1999-01-25-1999-01-29'
+                self.his = folder + 'TS/GIGATL3_5d_TS_' #1999-01-25-1999-01-29'
                 self.tfile=1
                 self.dtfile=5*24*3600
                 self.tend=10000
             elif 'EDDY' in simul or 'eddy' in simul:
-                self.his = folder + 'GIGATL3_5d_EDDY_' #1999-01-25-1999-01-29'
+                self.his = folder + 'EDDY/GIGATL3_5d_EDDY_' #1999-01-25-1999-01-29'
                 self.tfile=1
                 self.dtfile=5*24*3600
                 self.tend=10000
             elif 'avg' in simul:
-                self.his = folder_avg + 'GIGATL3_5d_aver_' #1999-01-25-1999-01-29'
+                self.his = folder_avg + '5d_aver/GIGATL3_5d_aver_' #1999-01-25-1999-01-29'
                 self.tfile=1
                 self.dtfile=5*24*3600
                 self.tend=10000
@@ -5209,11 +5209,11 @@ class files(object):
  
             else:
                 if 'tides' in simul or 'soda342_mon' in simul:
-                    self.his = folder + 'GIGATL3_3h_inst_' #1999-01-25-1999-01-29'
+                    self.his = folder + '3h_inst/GIGATL3_3h_inst_' #1999-01-25-1999-01-29'
                     self.dtfile=3*3600
                     self.tfile=40
                 elif 'gigatl3_1h' in simul:
-                    self.his = folder + 'GIGATL3_12h_inst_' #1999-01-25-1999-01-29'
+                    self.his = folder + '12h_inst/GIGATL3_12h_inst_' #1999-01-25-1999-01-29'
                     self.dtfile=12*3600
                     self.tfile=10
                 self.tend=100000
@@ -6108,17 +6108,27 @@ class files(object):
 
             self.model = 'croco'
             self.digits = 5
-            
-            if os.getenv('HOSTNAME') is None:
-                folder= libra +'/gula/ROMS/Simulations/ROTROU/'
+
+            if 'rotrou1' in simul:
+                folder0 = 'ROTROU1'
+                file_his = 'rotrou1'
+            else:
+                folder0 = 'ROTROU'
+                file_his = 'rotrou'
+                
+            if 'curie' in os.getenv('HOSTNAME') or 'irene' in os.getenv('HOSTNAME'):
+                folder = '/ccc/work/cont003/gen7638/gulaj/Simulations/' + folder0 + '/OUT/HIS/'
+                self.grd = '/ccc/work/cont003/gen7638/gulaj/Simulations/' + folder0 + '/INIT/rotrou_grd.nc'
+            elif os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/' + folder0 + '/'
                 self.grd=folder + 'rotrou_grd.nc'
             else:
                 folder= '/home/datawork-lops-megatl/rockall/'
                 self.grd= '/home/datawork-lops-megatl/rockall/rotrou_grd.nc'
 
-            self.his = folder + '/rotrou_his.'
+            self.his = folder + '/' + file_his + '_his.'
             
-            self.tfile=2
+            self.tfile=10
             self.dtfile=12*3600
             self.tend=100000
             

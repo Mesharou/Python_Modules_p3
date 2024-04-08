@@ -34,7 +34,7 @@ PROGRAMP  = pyticles_3d_sig_sa
 
 all:
 	$(CXX) $(SRCS) $(RCS)
-	$(CXX) $(SRCSGU) $(RCSGU
+	$(CXX) $(SRCSGU) $(RCSGU)
 #	$(CXX) $(SRCSGI) $(RCSGI)
 	$(FC) $(FCFLAGS) -m $(PROGRAM) $(RCS)
 	$(FC) $(FCFLAGS) -m $(PROGRAMGU) $(RCSGU)

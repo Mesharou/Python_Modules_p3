@@ -38,7 +38,7 @@ all:
 #	$(CXX) $(SRCSGI) $(RCSGI)
 	$(FC) $(FCFLAGS) -m $(PROGRAM) $(RCS)
 	$(FC) $(FCFLAGS) -m $(PROGRAMGU) $(RCSGU)
-	$(FC) $(FCFLAGS) -m $(PROGRAMGI) $(RCSGI)
+#	$(FC) $(FCFLAGS) -m $(PROGRAMGI) $(RCSGI)
 #	$(CXX) $(SRCSC) $(RCSC)
 #	$(FC) $(FCFLAGS) -m $(PROGRAMC) $(RCSC)
 	f2py -DF2PY_REPORT_ON_ARRAY_COPY=1 -c -m romstoolsfort_old romstoolsfort_old.F

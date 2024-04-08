@@ -4719,8 +4719,8 @@ class files(object):
                 region = 'eurec4a'
             elif 'gulfstream' in simul:
                 folder = folder0 + 'zoom_for_gulfstream/'
-                self.grd= folder + 'gigatl1_1h_tides_gulfstream_2008-08-01.nc'
-                region = 'gulfstream'
+                self.grd= folder + 'gigatl1_1h_tides_gulfstream_1h_2008-03-14.nc'
+                region = 'gulfstream_1h'
             elif 'malvinas' in simul:
                 folder = folder0 + 'zoom_for_malvinas/'
                 self.grd= folder + 'gigatl1_1h_tides_malvinas_2009-08-01.nc'

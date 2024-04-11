@@ -6104,14 +6104,19 @@ class files(object):
         
             self.realyear = True
             self.realyear_origin = datetime(1979,1,1)
-            self.realyear_tstart = datetime(2008,8,26,12)
+            
+            if 'rotrou1' in simul:
+                self.realyear_tstart = datetime(2008,8,26,1)
+            else:
+                self.realyear_tstart = datetime(2008,8,26,0,30)
+
 
             self.model = 'croco'
             self.digits = 5
 
             if 'rotrou1' in simul:
                 folder0 = 'ROTROU1'
-                file_his = 'rotrou1'
+                file_his = 'rotrou'
             else:
                 folder0 = 'ROTROU'
                 file_his = 'rotrou'
@@ -6123,7 +6128,7 @@ class files(object):
                 folder= libra +'/gula/ROMS/Simulations/' + folder0 + '/'
                 self.grd=folder + 'rotrou_grd.nc'
             else:
-                folder= '/home/datawork-lops-megatl/rockall/'
+                folder= '/home/datawork-lops-megatl/rockall/' + folder0 + '/'
                 self.grd= '/home/datawork-lops-megatl/rockall/rotrou_grd.nc'
 
             self.his = folder + '/' + file_his + '_his.'

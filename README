@@ -6,10 +6,10 @@
 #1. Compile the Fortran modules using f2py [included in numpy module]:
 
 cd Modules
-make
+make all
+make particles
+f2py -DF2PY_REPORT_ON_ARRAY_COPY=1 -c -m romstoolsfort_old romstoolsfort_old.F
 
-#2. Edit the names of your ROMS files and location in "Modules/R_files.py"
 
-vi Modules/R_files.py
 
 

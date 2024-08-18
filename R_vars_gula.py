@@ -110,6 +110,7 @@ class var(object):
     'hbls_t': ['Surface mixed-layer (based on t = ts - 0.2)', 'm', [0,0,-1]],\
     'hbls_akv': ['Surface mixed-layer (based on Akv<2e-4)', 'm', [0,0,-1]],\
     'Ekman': ['Ekman number (based on hbls_akv)', ' ', [0,0,-1]],\
+    'Ekman_rho': ['Ekman number (based on hbls_rho)', ' ', [0,0,-1]],\
     'AKt': ['Temperature vertical diffusion coef', 'm2/s', [0,0,0]],\
     'AKv': ['Momentum vertical diffusion coef', 'm2/s', [0,0,0]],\
     'omega': ['S-coordinate vertical velocity', 'm/s ?', [0,0,0]],\
@@ -255,6 +256,7 @@ class var(object):
     'tendency_full_u': ['Tendency for buoyancy', ' ' ,[0,0,1]],\
     \
     'diffusivity': ['diffusivity', ' ' ,[0,0,1]],\
+    'topostrophy': ['topostrophy', ' ' ,[0,0,1]],\
     \
     }
     
@@ -300,16 +302,18 @@ class var(object):
 #Load variables
 ###################################################################################
 
-    def __init__(self,varname,simul,n2max=50000,method='new',debug=False,**kwargs):
+    def __init__(self, varname, simul, n2max=100000, method='new',\
+                 debug=False, recompute=False, **kwargs):
 
-    
+        '''
+            recompute = True: forces computation even if variable is already in file
+        '''
+        
         if debug: print('using R_vars gula version')
     
-
         if debug: print('#######################################')
         if debug: print('load var', varname)
         if debug: print('#######################################')
-
 
         self.name = copy(varname)
         self.dictionnary()     
@@ -374,9 +378,10 @@ class var(object):
         ####################################################################
         #1. var is already in netcdf output 
         ####################################################################
-        if (self.name in list(ncfile.variables.keys())) and (method=='new'): # and (self.name not in ['w']):
+        if (self.name in list(ncfile.variables.keys()))\
+                     and (method=='new')  and not recompute: 
+        # and (self.name not in ['w']):
         #check if variable is already in output:  
-
 
 
             ##################################################################
@@ -580,12 +585,18 @@ class var(object):
                     chunk = self.get_sig(ncfile,simul,depths=depths,coord=[ny1i,ny2i,nx1i,nx2i],subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1],debug=debug)
                     
                 elif (np.min(depths)>0) or (self.kmin<0):
-                    chunk = self.get_sig(ncfile,simul,depths=depths,coord=[ny1i,ny2i,nx1i,nx2i],subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1],debug=debug)
+                    chunk = self.get_sig(ncfile,simul,depths=depths,\
+                                         coord=[ny1i,ny2i,nx1i,nx2i],\
+                                         subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1],\
+                                         debug=debug)
 
                 elif (zsize==1) and (np.min(depths)==0) and (self.name in ['vrt','str','absvrt','ow',\
                                                                            'dxbuoy2','tendency','div']):
                     
-                    chunk = self.get_sig(ncfile,simul,depths=depths,coord=[ny1i,ny2i,nx1i,nx2i],subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1],debug=debug)
+                    chunk = self.get_sig(ncfile,simul,depths=depths,\
+                                         coord=[ny1i,ny2i,nx1i,nx2i],\
+                                         subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1],\
+                                         debug=debug)
 
                 else:
 
@@ -598,12 +609,13 @@ class var(object):
                         subdepths = depths[nx1i-nx1:nx2i-nx1,ny1i-ny1:ny2i-ny1,:]
                     else:
                         subdepths = depths
-                    
+
+                    sigvar = self.get_sig(ncfile,simul,depths=simul.coordmax[4],\
+                                                        coord=[ny1i,ny2i,nx1i,nx2i],\
+                                                        subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1])
                     
                     #Compute variable in subdomain
-                    chunk = tools.vinterp(self.get_sig(ncfile,simul,depths=simul.coordmax[4],\
-                                                        coord=[ny1i,ny2i,nx1i,nx2i],\
-                                                        subcoord=[ny1i-ny1,ny2i-ny1,nx1i-nx1,nx2i-nx1]),\
+                    chunk = tools.vinterp(sigvar,\
                                                         subdepths,\
                                                         z_r,z_w,\
                                                         imin=self.imin,jmin=self.jmin,kmin=self.kmin,\
@@ -783,11 +795,9 @@ class var(object):
         ################################################
 
 
-        if self.name in ['rho','rho1','rhop','bvf','buoy','buoy1','rho1_gsw']:
-
-
-            if self.name not in ['rho1','buoy1']:
-                [z_r,z_w] = tools.get_depths(simul,coord=[ny1i,ny2i,nx1i,nx2i])
+        if self.name in ['rho1','buoy1','rhop']:
+            # No need to use 3d data
+            # can be computed directly on one sigma-level or several
 
             T = self.load('temp',ncfile,simul,coord=coord, depths=depths)
             try:
@@ -796,14 +806,32 @@ class var(object):
                 print('no S in file')
                 S = T*0.
               
-            if self.name in ['rho']: var = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
-            elif self.name in ['rho1']: var = toolsF.rho1_eos(T,S,simul.rho0)    
-            elif self.name in ['bvf']: var = toolsF.bvf_eos(T,S,z_r,z_w,simul.rho0)   
-            elif self.name in ['buoy']: var = toolsF.get_buoy(T,S,z_r,z_w,simul.rho0)
+            if self.name in ['rho1']: var = toolsF.rho1_eos(T,S,simul.rho0)    
             elif self.name in ['buoy1']: var = toolsF.rho1_eos(T,S,simul.rho0)*(-simul.g/simul.rho0)
             elif self.name in ['rhop']: var = tools_g.rhop(T,S)
+            
+        ################################################
+
+        if self.name in ['rho','bvf','buoy','rho1_gsw']:
+
+            [z_r,z_w] = tools.get_depths(simul,coord=[ny1i,ny2i,nx1i,nx2i])
+
+            T = self.load('temp',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+            try:
+                S = self.load('salt',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+            except:
+                print('no S in file')
+                S = T*0.
+              
+            if self.name in ['rho']: var = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
+            elif self.name in ['bvf']: var = toolsF.bvf_eos(T,S,z_r,z_w,simul.rho0)   
+            elif self.name in ['buoy']: var = toolsF.get_buoy(T,S,z_r,z_w,simul.rho0)
             elif self.name in ['rho1_gsw']: var = tools_g.rho1_gsw(T,S,z_r,x,y)
             
+            if (min(depths)>0) and len(depths)<len(simul.coordmax[4]):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
+
         ################################################
         
         elif self.name in ['hbls_rho']:
@@ -820,14 +848,9 @@ class var(object):
                 S = T*0.
               
             rho = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
-            var = copy(rho[:,:,-1])*np.nan
 
-            for i in range(rho.shape[0]):
-                for j in range(rho.shape[1]):
-                    try:
-                        var[i,j] = np.min([-z_r[i,j,np.min([1+np.nanargmax(np.where((rho[i,j,:] - rho[i,j,-1])>0.03)),rho.shape[2]-1])],topo[i,j]])
-                    except:
-                        var[i,j] = topo[i,j]
+            # compute MLD
+            var = tools_g.get_hbls_rho(rho,z_r)
 
         ################################################
         
@@ -842,15 +865,8 @@ class var(object):
             except:
                 AKv = self.load('AKt',ncfile,simul,coord=coord, depths=simul.coordmax[4])
 
-            var = copy(z_r[:,:,-1])*np.nan
-
-            for i in range(var.shape[0]):
-                for j in range(var.shape[1]):
-                    try:
-                        k_hbl = np.min([np.nanmax((AKv[i,j,:]<2e-4).nonzero()),z_w.shape[2]-1])
-                        var[i,j] = np.min([-z_w[i,j,k_hbl],topo[i,j]])
-                    except:
-                        var[i,j] = topo[i,j]
+            # compute MLD
+            var = tools_g.get_hbls(AKv,z_w)
 
         ################################################
         
@@ -861,16 +877,39 @@ class var(object):
             [z_r,z_w] = tools.get_depths(simul,coord=[ny1i,ny2i,nx1i,nx2i])
 
             try:
-                AKv = self.load('AKv',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+                AKv = self.load('AKv',ncfile,simul,coord=coord, depths=np.append(simul.coordmax[4],simul.coordmax[4][-1]+1))
             except:
-                AKv = self.load('AKt',ncfile,simul,coord=coord, depths=simul.coordmax[4])
-            var = copy(z_r[:,:,-1])*np.nan
+                AKv = self.load('AKt',ncfile,simul,coord=coord, depths=np.append(simul.coordmax[4],simul.coordmax[4][-1]+1))
 
-            for i in range(var.shape[0]):
-                for j in range(var.shape[1]):
-                    k_hbl = np.min([np.nanmax((AKv[i,j,:]<2e-4).nonzero()),z_w.shape[2]-1])
-                    hbl = np.min([-z_w[i,j,k_hbl],topo[i,j]])
-                    var[i,j] = np.nanmean(AKv[i,j,k_hbl:]) / (f[i,j] * hbl**2)
+            # compute MLD and Akv ML-average
+            var = tools_g.get_ekman(AKv,z_r,z_w,f)
+
+
+        ################################################
+
+        elif self.name in ['Ekman_rho']:
+            '''
+            Ekman number based on AKv and ML based on density criteria
+            '''
+            [z_r,z_w] = tools.get_depths(simul,coord=[ny1i,ny2i,nx1i,nx2i])
+
+            try:
+                AKv = self.load('AKv',ncfile,simul,coord=coord, depths=np.append(simul.coordmax[4],simul.coordmax[4][-1]+1))
+            except:
+                AKv = self.load('AKt',ncfile,simul,coord=coord, depths=np.append(simul.coordmax[4],simul.coordmax[4][-1]+1))
+
+            T = self.load('temp',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+            try:
+                S = self.load('salt',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+            except:
+                print('no S in file')
+                S = np.zeros_like(T)
+
+            # get rho
+            rho = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
+
+            # compute MLD and Akv ML-average
+            var = tools_g.get_ekman_rho(AKv,rho,z_r,z_w,f)
 
          ################################################
         
@@ -1105,14 +1144,18 @@ class var(object):
         elif self.name in ['w']:
             
             if debug: print('computing w', coord)
-            u = self.load('u',ncfile,simul,coord=coord,depths=depths)
-            v = self.load('v',ncfile,simul,coord=coord,depths=depths)
+            u = self.load('u',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            v = self.load('v',ncfile,simul,coord=coord,depths=simul.coordmax[4])
             
             [z_r,z_w] = tools.get_depths(simul,coord=coord)
 
             var= tools.nanbnd(toolsF.get_wvlcty(u,v,z_r,z_w,pm,pn))
             #var= toolsF.get_wvlcty(u,v,z_r,z_w,pm,pn)
-
+            
+            if (min(depths)>0):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
+                
         ################################################
 
         
@@ -1143,8 +1186,6 @@ class var(object):
             var[1:-1,:,:] = bxx 
             var[:,1:-1,:] = var[:,1:-1,:] + byy        
             var = -1*(var.T/(simul.f**2).T).T
-            
-            return var
 
         ################################################
 
@@ -1152,8 +1193,6 @@ class var(object):
         elif self.name in ['w_ttw']:
             
             var = self.get_w_ttw_sig(simul,coord=coord)
-            
-            return var
             
         ################################################
         
@@ -1233,15 +1272,25 @@ class var(object):
             
         ################################################
         
-        elif self.name in ['Ri']:
+        elif self.name in ['topostrophy']:
 
+            u = self.load('u',ncfile,simul,coord=coord,depths=depths)
+            v = self.load('v',ncfile,simul,coord=coord,depths=depths)
+
+            var = ( f.T * ( tools.u2rho(u).T * tools.v2rho(tools.diffy(topo,pn)).T\
+                      - tools.v2rho(v).T * tools.u2rho(tools.diffx(topo,pm)).T)
+                  ).T
             
-            T = self.load('temp',ncfile,simul,coord=coord,depths=depths)
-            S = self.load('salt',ncfile,simul,coord=coord,depths=depths)
-            u = tools.u2rho(self.load('u',ncfile,simul,coord=coord,depths=depths))
-            v = tools.v2rho(self.load('v',ncfile,simul,coord=coord,depths=depths))
+        ################################################
+        
+        elif self.name in ['Ri']:
+            
+            T = self.load('temp',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            S = self.load('salt',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            u = tools.u2rho(self.load('u',ncfile,simul,coord=coord,depths=simul.coordmax[4]))
+            v = tools.v2rho(self.load('v',ncfile,simul,coord=coord,depths=simul.coordmax[4]))
 
-            [z_r,z_w] = tools.get_depths(simul,coord=coord,depths=depths)
+            [z_r,z_w] = tools.get_depths(simul,coord=coord,depths=simul.coordmax[4])
 
             bvf = toolsF.bvf_eos(T,S,z_r,z_w,simul.rho0)
             
@@ -1250,7 +1299,11 @@ class var(object):
 
             var = bvf * 0.
             var[:,:,1:-1] = bvf[:,:,1:-1]/(dzu**2 + dzv**2);
-            
+           
+            if (min(depths)>0) and len(depths)<len(simul.coordmax[4]):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
+
         ################################################
         
         elif self.name in ['dzu']:

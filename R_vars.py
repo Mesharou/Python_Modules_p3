@@ -114,15 +114,16 @@ class var(object):
 #Load variables
 ###################################################################################
 
-    def __init__(self,varname,simul,n2max=100000,method='new',verbo=False,**kwargs):
+    def __init__(self, varname, simul, n2max=100000, method='new',\
+                 recompute=False, verbo=False, **kwargs):
 
-    
-
+        '''
+            recompute = True: forces computation even if variable is already in file
+        '''
 
         #print '#######################################'
         #print 'load var', varname
         #print '#######################################'
-
 
         self.name = copy(varname)
         self.dictionnary()     
@@ -132,7 +133,6 @@ class var(object):
         # if coordinates are given directly as an argument, use it instead of simul.coord[0:4]
         if 'coord' in  kwargs: self.coord[0:4] = kwargs['coord']
         [ny1,ny2,nx1,nx2,depths] = self.coord
-        
 
         # if depths is given directly as an argument, use it instead of simul.coord[4]
         if 'depths' in  kwargs: depths = kwargs['depths']
@@ -145,14 +145,11 @@ class var(object):
         else:
             u = None; v= None
         
-                
-        
         if 'masked' in  kwargs: 
             masked_value =  kwargs['masked']
         else: 
             masked_value =  np.nan
 
-     
         ############################# 
         # test if periodic
         #############################
@@ -188,8 +185,9 @@ class var(object):
         ####################################################################
         #1. var is already in netcdf output 
         ####################################################################
-        if (self.name in list(ncfile.variables.keys())): # and (self.name not in ['w']):
-        # check if variable is already in output:  (add test for w because problem with w in avg files (if produced before 05/05/14))
+        if (self.name in list(ncfile.variables.keys())) and not recompute:
+        # check if variable is already in output: 
+        # add test for w because problem with w in avg files (if produced before 05/05/14))
         # test for ['rho'] removed 17/11/24
 
             ##################################################################
@@ -355,7 +353,7 @@ class var(object):
         ####################################################################
         elif (self.longname != 'unknown'):
 
-            if verbo: print('Variable not in ROMS outputs _ will be computed using new Fortran tools')  
+            if verbo: print('Variable not in ROMS outputs _ will be computed using Fortran tools')  
 
             ####################################################################
             # Create an array to store the variable (self.data)
@@ -585,10 +583,9 @@ class var(object):
         ################################################
 
 
-        if self.name in ['rho','rho1','bvf','buoy','buoy1']:
-
-            if self.name not in ['rho1','buoy1']:
-                [z_r,z_w] = tools.get_depths(simul,coord=[ny1i,ny2i,nx1i,nx2i])
+        if self.name in ['rho1','buoy1']:
+            # No need to use 3d data
+            # can be computed directly on one sigma-level or several
 
             T = self.load('temp',ncfile,simul,coord=coord, depths=depths)
             try:
@@ -597,13 +594,30 @@ class var(object):
                 print('no S in file')
                 S = T*0.
               
-            if self.name in ['rho']: var = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
-            elif self.name in ['rho1']: var = toolsF.rho1_eos(T,S,simul.rho0)    
-            elif self.name in ['bvf']: var = toolsF.bvf_eos(T,S,z_r,z_w,simul.rho0)   
-            elif self.name in ['buoy']: var = toolsF.get_buoy(T,S,z_r,z_w,simul.rho0)
+            if self.name in ['rho1']: var = toolsF.rho1_eos(T,S,simul.rho0)    
             elif self.name in ['buoy1']: var = toolsF.rho1_eos(T,S,simul.rho0)*(-simul.g/simul.rho0)
 
+        ################################################
 
+        if self.name in ['rho','bvf','buoy']:
+
+            [z_r,z_w] = tools.get_depths(simul,coord=[ny1i,ny2i,nx1i,nx2i])
+
+            T = self.load('temp',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+            try:
+                S = self.load('salt',ncfile,simul,coord=coord, depths=simul.coordmax[4])
+            except:
+                print('no S in file')
+                S = T*0.
+              
+            if self.name in ['rho']: var = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
+            elif self.name in ['bvf']: var = toolsF.bvf_eos(T,S,z_r,z_w,simul.rho0)   
+            elif self.name in ['buoy']: var = toolsF.get_buoy(T,S,z_r,z_w,simul.rho0)
+
+            if (min(depths)>0):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
+            
         ################################################
         
 
@@ -639,13 +653,17 @@ class var(object):
 
 
         elif self.name in ['w']:
-    
-            u = self.load('u',ncfile,simul,coord=coord,depths=depths)
-            v = self.load('v',ncfile,simul,coord=coord,depths=depths)
+            
+            #Requires 3d velocities
+            u = self.load('u',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            v = self.load('v',ncfile,simul,coord=coord,depths=simul.coordmax[4])
             
             [z_r,z_w] = tools.get_depths(simul,coord=coord)
-            var = toolsF.get_wvlcty(u,v,z_r,z_w,pm,pn)
-
+            var = tools.nanbnd(toolsF.get_wvlcty(u,v,z_r,z_w,pm,pn))
+            
+            if (min(depths)>0):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
             #var= tools.nanbnd(var)
 
 

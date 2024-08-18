@@ -32,7 +32,9 @@ class ionetcdf(object):
 #   Main 
 ###################################################################################
 
-    def __init__(self,newfile,simul,var,nctime=None,name='var',shape = [0,0,1],coord=[0,None,0,None,0,None],netcdf_format='NETCDF4_CLASSIC',zlib=False,static=False,**kwargs):
+    def __init__(self,newfile,simul,var,nctime=None,name='var',shape = [0,0,1],\
+                 coord=[0,None,0,None,0,None],netcdf_format='NETCDF4_CLASSIC',\
+                 datatype='f4',zlib=False,static=False,**kwargs):
 
         """
 
@@ -65,7 +67,7 @@ class ionetcdf(object):
         if isinstance(data,int) or isinstance(data,float):
 
             if name not in list(newnc.variables.keys()):
-                newnc.createVariable(name, 'f', (dim0,) )
+                newnc.createVariable(name, 'f', (dim0,))
                 
             newnc.variables[name][nctime]=data
             
@@ -78,33 +80,33 @@ class ionetcdf(object):
                     print('netcdf_format==NETCDF3_CLASSIC')
                     if static:
                         if len(data.shape)>2:
-                            newnc.createVariable(name, 'f', (dim3[kmin],dim2[jmin],dim1[imin],))
+                            newnc.createVariable(name, datatype, (dim3[kmin],dim2[jmin],dim1[imin],))
                         else:
-                            newnc.createVariable(name, 'f', (dim2[jmin],dim1[imin],) )
+                            newnc.createVariable(name, datatype, (dim2[jmin],dim1[imin],) )
                     else:
                         if len(data.shape)>2:
                             print('len(data.shape)>2')
-                            newnc.createVariable(name, 'f', (dim0,dim3[kmin],dim2[jmin],dim1[imin],))
+                            newnc.createVariable(name, datatype, (dim0,dim3[kmin],dim2[jmin],dim1[imin],))
                         else:
                             print('len(data.shape)=2')
-                            newnc.createVariable(name, 'f', (dim0,dim2[jmin],dim1[imin],) )
+                            newnc.createVariable(name, datatype, (dim0,dim2[jmin],dim1[imin],) )
                             print('ok')
                 else:  
                     print('netcdf_format==NETCDF4')
                     if static:
                         if len(data.shape)>2:
-                            newnc.createVariable(name, 'f4', (dim3[kmin],dim2[jmin],dim1[imin],) ,zlib=zlib)
+                            newnc.createVariable(name, datatype, (dim3[kmin],dim2[jmin],dim1[imin],) ,zlib=zlib)
                         else:
-                            newnc.createVariable(name, 'f4', (dim2[jmin],dim1[imin],) ,zlib=zlib)
+                            newnc.createVariable(name, datatype, (dim2[jmin],dim1[imin],) ,zlib=zlib)
                     else:
                         if len(data.shape)>2:
                             print('len(data.shape)>2')
                             #newnc.createVariable(name, 'f4', (dim0,dim3[kmin],dim2[jmin],dim1[imin],) ,zlib=zlib,chunksizes = (1,1,700,600))
-                            newnc.createVariable(name, 'f4', (dim0,dim3[kmin],dim2[jmin],dim1[imin],) ,zlib=zlib)
+                            newnc.createVariable(name, datatype, (dim0,dim3[kmin],dim2[jmin],dim1[imin],) ,zlib=zlib)
                         else:
                             print('len(data.shape)=2')
                             #newnc.createVariable(name, 'f4', (dim0,dim2[jmin],dim1[imin],) ,zlib=zlib,chunksizes = (1,700,600))
-                            newnc.createVariable(name, 'f4', (dim0,dim2[jmin],dim1[imin],) ,zlib=zlib)
+                            newnc.createVariable(name, datatype, (dim0,dim2[jmin],dim1[imin],) ,zlib=zlib)
                         
             if len(data.shape)>2:
                 if static:
@@ -112,6 +114,8 @@ class ionetcdf(object):
                 else:
                     #print 'newnc.variables[name][:].shape',newnc.variables[name][:].shape
                     #print 'data.shape',data.shape
+                    #print('nctime is ',nctime)
+                    #print('data nanmax is ',np.nanmax(data))
                     newnc.variables[name][nctime,iz1:iz2,iy1:iy2,ix1:ix2]=data.T
             else:
                 if static:

@@ -35,7 +35,11 @@ are loaded in the form of "my_simul" attributes
 
 Check "dir(my_simul)" to see what has been loaded:
 
-['Cs_r', 'Cs_w', 'Forder',  'coord', 'coordmax', 'cst', 'date', 'day', 'domain', 'dt', 'dtime', 'f', 'filetime', 'floattype', 'g', 'get_domain', 'hc', 'hour', 'infiletime', 'load_file', 'mask', 'min', 'month', 'ncfile', 'ncname', 'oceandate', 'oceantime', 'pm', 'pn', 'rdrg', 'rho0', 'simul', 'time', 'time0', 'topo', 'update', 'variables_grd', 'x', 'y', 'year']
+['Cs_r', 'Cs_w', 'Forder',  'coord', 'coordmax', 'cst', 'date', 'day',\
+ 'domain', 'dt', 'dtime', 'f', 'filetime', 'floattype', 'g', 'get_domain',\
+ 'hc', 'hour', 'infiletime', 'load_file', 'mask', 'min', 'month',\
+ 'ncfile', 'ncname', 'oceandate', 'oceantime',\
+ 'pm', 'pn', 'rdrg', 'rho0', 'simul', 'time', 'time0', 'topo', 'update', 'variables_grd', 'x', 'y', 'year']
 
 #######################
 
@@ -80,8 +84,8 @@ class load(object):
 ###################################################################################
 #   Main 
 ###################################################################################
-    def __init__(self,simulname=None,time=None, floattype=float, light = False,\
-                  light_bulk = False, touchfile=True, output =True, **kwargs):
+    def __init__(self, simulname=None, time=None, floattype=float, light=False,\
+                  light_bulk=False, touchfile=True, output=True, **kwargs):
 
         """
 
@@ -110,7 +114,7 @@ class load(object):
         
         if self.ncname.model in ['ucla','croco']:
             if self.output: print('time of simulation is:', self.time)
-            self.infiletime=self.time%self.ncname.tfile
+            self.infiletime=int(self.time%self.ncname.tfile)
             self.filetime=self.time-self.infiletime
             if self.ncname.digits==4:
                 self.ncfile = self.ncname.his+'{0:04}'.format(self.filetime) + self.ncname.fileformat
@@ -124,7 +128,7 @@ class load(object):
             dsec = 30*24*3600 /self.ncname.tfile #dt in seconds between 2 outputs
             month = (self.ncname.Mstart + self.time * dsec/ (30*24*3600) - 1 )%12 + 1
             year = self.ncname.Ystart + ((self.ncname.Mstart-1) * 30 * 24 * 3600 + self.time * dsec ) / (360*24*3600)
-            self.infiletime = (self.time * dsec % (30*24*3600))/dsec
+            self.infiletime = int((self.time * dsec % (30*24*3600))/dsec)
             #self.infiletime = (self.time * dhour % (30*24))/dhour
             self.filetime=self.time
             self.ncfile = self.ncname.his+'Y' +format(year)+'M'+format(month) + self.ncname.fileformat
@@ -133,7 +137,7 @@ class load(object):
             date = self.ncname.realyear_origin + timedelta(days=self.time-self.ncname.tstart)
             year = date.year
             month = date.month
-            self.infiletime = self.time%self.ncname.tfile
+            self.infiletime = int(self.time%self.ncname.tfile)
             self.filetime = self.time
             self.ncfile = self.ncname.his+'Y' +'{0:04}'.format(year)+'M'+'{0:02}'.format(month) + '.' +'{0:04}'.format(self.filetime) + self.ncname.fileformat
             if self.output: print('file is ',self.ncfile)
@@ -171,7 +175,7 @@ class load(object):
                 month1 = date1.month
                 day1 = date1.day
 
-            self.infiletime = (self.time-self.ncname.shift)%self.ncname.tfile
+            self.infiletime = int((self.time-self.ncname.shift)%self.ncname.tfile)
             self.filetime = self.time
             
             if self.ncname.model == 'croco_xios':
@@ -259,7 +263,7 @@ class load(object):
 
         if self.ncname.model in ['ucla','croco']:
             if self.output: print('time of simulation is:', self.time)
-            self.infiletime=self.time%self.ncname.tfile
+            self.infiletime=int(self.time%self.ncname.tfile)
             self.filetime=self.time-self.infiletime
             if self.ncname.digits==4:
                 self.ncfile = self.ncname.his+'{0:04}'.format(self.filetime) + self.ncname.fileformat
@@ -273,7 +277,7 @@ class load(object):
             dsec = 30*24*3600 /self.ncname.tfile #dt in seconds between 2 outputs
             month = (self.ncname.Mstart + self.time * dsec/ (30*24*3600) - 1 )%12 + 1
             year = self.ncname.Ystart + ((self.ncname.Mstart-1) * 30 * 24 * 3600 + self.time * dsec ) / (360*24*3600)
-            self.infiletime = (self.time * dsec % (30*24*3600))/dsec
+            self.infiletime = int((self.time * dsec % (30*24*3600))/dsec)
             #self.infiletime = (self.time * dhour % (30*24))/dhour
             self.filetime=self.time
             self.ncfile = self.ncname.his+'Y' +format(year)+'M'+format(month)+ self.ncname.fileformat
@@ -282,7 +286,7 @@ class load(object):
             date = self.ncname.realyear_origin + timedelta(days=self.time-self.ncname.tstart)
             year = date.year
             month = date.month
-            self.infiletime = self.time%self.ncname.tfile
+            self.infiletime = int(self.time%self.ncname.tfile)
             self.filetime = self.time
             self.ncfile = self.ncname.his+'Y' +'{0:04}'.format(year)+'M'+'{0:02}'.format(month) + '.' +'{0:04}'.format(self.filetime) + self.ncname.fileformat
             if self.output: print('file is ',self.ncfile)
@@ -309,7 +313,7 @@ class load(object):
             month2 = date2.month
             day2 = date2.day
             
-            self.infiletime = (self.time-self.ncname.shift)%self.ncname.tfile
+            self.infiletime = int((self.time-self.ncname.shift)%self.ncname.tfile)
             self.filetime = self.time-self.infiletime
             
             if self.output: print((self.simul,format(self.time)))
@@ -4695,9 +4699,11 @@ class files(object):
                 else:
                     folder0= '/home/datawork-lops-megatl/'
             except:
-                folder0= '/net/omega/local/tmp/2/gula/GIGATL1/'
-                
-                    
+                #folder0= '/net/omega/local/tmp/2/gula/GIGATL1/'
+                folder0= '/data-gigatl/data/GIGATL1/'
+
+            hourly_name = '_'
+            
             if 'region_01' in simul:
                 folder = folder0 + 'zoom_for_SWOT/'
                 self.grd= folder + 'daily/gigatl1_1h_tides_region_01_2009-02-01.nc'
@@ -4713,18 +4719,37 @@ class files(object):
                 self.grd= folder + 'gigatl1_1h_tides_cape_verde_2009-02-01.nc'
                 region = 'cape_verde'
             elif 'eurec4a' in simul:
-                folder = folder0 + 'zoom_for_eurec4a/'
-                #folder = folder0 + 'Eurec4a/'
+                #folder = folder0 + 'zoom_for_eurec4a/'
+                folder = folder0 + 'Eurec4a/'
                 self.grd= folder + 'gigatl1_1h_tides_eurec4a_2008-03-25.nc'
                 region = 'eurec4a'
             elif 'gulfstream' in simul:
                 folder = folder0 + 'zoom_for_gulfstream/'
                 self.grd= folder + 'gigatl1_1h_tides_gulfstream_1h_2008-03-14.nc'
                 region = 'gulfstream_1h'
+            elif 'crossroads' in simul:
+                folder = folder0 + 'zoom_for_crossroads/'
+                #folder = folder0 + 'Crossroads/'           
+                self.grd= folder + 'gigatl1_1h_tides_crossroads_daily_2008-03-14.nc'
+                region = 'crossroads'
+                hourly_name = '_1h_'
+            elif 'cossmoss' in simul:
+                #folder = folder0 + 'zoom_for_cossmoss/'
+                folder = folder0 + 'Cossmoss/'
+                self.grd= folder + 'gigatl1_1h_tides_cossmoss_1h_2008-03-14.nc'
+                region = 'cossmoss_1h'
             elif 'malvinas' in simul:
                 folder = folder0 + 'zoom_for_malvinas/'
                 self.grd= folder + 'gigatl1_1h_tides_malvinas_2009-08-01.nc'
                 region = 'malvinas'
+            elif 'plain' in simul:
+                #folder = folder0 + 'zoom_for_plain/'
+                folder = folder0 + 'Plain/'
+                self.grd= folder + 'gigatl1_1h_tides_plain_1h_2008-03-14.nc'
+                if 'daily' in simul:
+                    region = 'plain'
+                else:
+                    region = 'plain_1h'         
             elif 'iceland' in simul:
                 folder = folder0 + 'zoom_for_iceland/'
                 self.grd= folder + 'gigatl1_1h_tides_iceland_2009-01-01.nc'
@@ -4758,7 +4783,28 @@ class files(object):
                     self.grd= folder + 'gigatl1_1h_latmix_2009-03-21.nc'
                 region = 'latmix'
                 
-            if 'daily' in  simul:
+
+            if 'mean' in simul and 'daily' in simul:
+                #self.his = folder + 'gigatl1_1h_tides_' + region + '_'
+                self.his = folder + 'gigatl1_1h_tides_' + region + '_daily.mean.2008-05-01-2008-07-31.nc'
+                self.tfile=1
+                self.dtfile=24*3600
+                self.tend=100000
+                self.model = 'croco'
+                self.digits = 0
+            elif 'mean' in simul and 'monthly' in simul:
+                if 'varuv' in simul:
+                    self.his = folder + 'gigatl1_1h_tides_' + region + '.meanvaruv'
+                elif 'mabs' in simul:
+                    self.his = folder + 'gigatl1_1h_tides_' + region + '.meanmabs'
+                else:
+                    self.his = folder + 'gigatl1_1h_tides_' + region + '.mean'                   
+                self.tfile=1
+                self.dtfile=24*3600
+                self.tend=100000
+                self.model = 'croco'
+                self.digits = 0   
+            elif 'daily' in  simul:
                 #self.his = folder + 'gigatl1_1h_tides_' + region + '_'
                 self.his = folder + 'gigatl1_1h_tides_' + region + '_daily_'
                 self.tfile=1
@@ -4778,9 +4824,9 @@ class files(object):
                 self.fileformat = '.nc'  
             else:
                 if 'tides' in simul:
-                    self.his = folder + 'gigatl1_1h_tides_' + region + '_'
+                    self.his = folder + 'gigatl1_1h_tides_' + region + hourly_name
                 else:
-                    self.his = folder + 'gigatl1_1h_' + region + '_'
+                    self.his = folder + 'gigatl1_1h_' + region + hourly_name
                 self.tfile=24
                 self.dtfile=3600
                 self.tend=100000
@@ -5362,15 +5408,7 @@ class files(object):
                 self.tfile=120
                 self.dtfile=3600
                 self.tend=100000
-            elif 'uvbot' in simul:
 
-                self.his = folder + '/uvbot/gigatl6_1h_UP3_uvbotz.'
-                self.dtfile=12*3600
-                self.tfile=10
-                    
-                self.model = 'croco'
-                self.digits = 5
-                self.tend=100000
 
             elif 'mean' in simul:
                 year=''.join([n for n in simul.split('[')[0] if n.isdigit()])
@@ -5382,17 +5420,31 @@ class files(object):
                     self.his = folder + '/GIGATL6_5d_KE.mean' + add
                 elif 'uvvar' in simul:
                     self.his = folder + '/GIGATL6_5d_aver.uvvar5d' + add
-                elif 'UV' in simul or 'uv' in simul:
+                elif 'UV' in simul or 'uv' in simul and 'uvbot' not in simul:
                     self.his = folder + '/GIGATL6_5d_M.mean' + add
                 elif 'TS' in simul or 'ts' in simul:
                     self.his = folder + '/GIGATL6_5d_TS.mean' + add
                 elif 'EDDY' in simul or 'eddy' in simul:
                     self.his = folder + '/GIGATL6_5d_EDDY.mean' + add
+                elif 'uvbot' in simul:
+                    self.his = folder + '/uvbot/gigatl6_1h_UP3_uvbotz.mean' + add     
                 else:
                     self.his=folder + 'GIGATL6_5d_aver.mean' + add
+                    
                 self.model = 'croco'
                 self.digits = 0
                 self.tfile=1; self.dtfile=1; self.tend=11
+
+            elif 'uvbot' in simul:
+
+                self.his = folder + '/uvbot/gigatl6_1h_UP3_uvbotz.'
+                self.dtfile=12*3600
+                self.tfile=10
+                    
+                self.model = 'croco'
+                self.digits = 5
+                self.tend=100000
+                
             elif 'hourly' in simul:
                 self.his = folder + 'GIGATL6_1h_avg_3d_' 
                 self.tfile=120
@@ -6114,27 +6166,83 @@ class files(object):
             self.model = 'croco'
             self.digits = 5
 
-            if 'rotrou1' in simul:
-                folder0 = 'ROTROU1'
+            if 'rotrou1' in simul and 'gls' in simul :
+                folder0 = 'ROTROU1_gls'
+                file_his = 'rotrou'
+            elif 'rotrou1' in simul:
+                folder0 = 'ROTROU1_v3'
                 file_his = 'rotrou'
             else:
                 folder0 = 'ROTROU'
                 file_his = 'rotrou'
                 
-            if 'curie' in os.getenv('HOSTNAME') or 'irene' in os.getenv('HOSTNAME'):
-                folder = '/ccc/work/cont003/gen7638/gulaj/Simulations/' + folder0 + '/OUT/HIS/'
+            if os.getenv('HOSTNAME') is None:
+                self.grd=libra +'/gula/ROMS/Simulations/ROTROU/rotrou_grd.nc'
+                folder= libra +'/gula/ROMS/Simulations/ROTROU/' +  folder0 + '/'
+
+            elif 'curie' in os.getenv('HOSTNAME') or 'irene' in os.getenv('HOSTNAME'):
+                folder = '/ccc/work/cont003/gen7638/gulaj/Simulations/' + folder0 + '/OUT/'
                 self.grd = '/ccc/work/cont003/gen7638/gulaj/Simulations/' + folder0 + '/INIT/rotrou_grd.nc'
-            elif os.getenv('HOSTNAME') is None:
-                folder= libra +'/gula/ROMS/Simulations/' + folder0 + '/'
-                self.grd=folder + 'rotrou_grd.nc'
             else:
                 folder= '/home/datawork-lops-megatl/rockall/' + folder0 + '/'
                 self.grd= '/home/datawork-lops-megatl/rockall/rotrou_grd.nc'
 
-            self.his = folder + '/' + file_his + '_his.'
-            
-            self.tfile=10
-            self.dtfile=12*3600
+
+
+            if 'avg' in simul:
+                self.tfile=1
+                self.dtfile=24*3600
+                if 'mean' in simul:
+                    if '00049' in simul:
+                        mean = '.mean.00010-00049'
+                    elif '00069' in simul:
+                        mean = '.mean.00020-00069'
+                    elif '00079' in simul:
+                        mean = '.mean.00020-00079'
+                    elif '00099' in simul:
+                        mean = '.mean.00020-00099' 
+                    elif '00109' in simul:
+                        mean = '.mean.00030-00109'
+                    elif '00199' in simul:
+                        mean = '.mean.00030-00199'  
+                    else:
+                        mean = '.mean'     
+                    if 'ts' in simul:
+                        self.his = folder + '/' + file_his + '_diaT_avg' + mean
+                    elif 'pv' in simul:
+                        self.his = folder + '/' + file_his + '_diags_pv_avg' + mean
+                    elif 'wdia' in simul:
+                        self.his = folder + '/' + file_his + '_diags_wdia_avg' + mean                   
+                    else:
+                        self.his = folder + '/' + file_his + '_avg' + mean
+
+                    self.digits = 0
+                else:
+
+                    if 'ts' in simul:
+                        self.his = folder + '/' + file_his + '_diaT_avg.'
+                    elif 'pv' in simul:
+                        self.his = folder + '/' + file_his + '_diags_pv_avg.'
+                    elif 'wdia' in simul:
+                        self.his = folder + '/' + file_his + '_diags_wdia_avg.'                    
+                    else:
+                        self.his = folder + '/' + file_his + '0_avg.'
+            else:
+                self.tfile=10
+                self.dtfile=12*3600
+                if 'ts' in simul:
+                    self.his = folder +  '/' + file_his + '_diaT.'
+                elif 'pv' in simul:
+                    self.his = folder +  '/' + file_his + '_diags_pv.'
+                elif 'wdia' in simul:
+                    self.his = folder +  '/' + file_his + '_diags_wdia.'
+                elif 'hourly' in simul:
+                    self.tfile=24
+                    self.dtfile=3600
+                    self.his = folder +  '/HIS_1h/' + file_his + '_his.'
+                else:
+                    self.his = folder +  '/HIS/' + file_his + '_his.'
+
             self.tend=100000
             
         ##################

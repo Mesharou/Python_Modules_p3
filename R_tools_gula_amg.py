@@ -15,7 +15,7 @@ from __future__ import print_function
 ###################################################################################
 
 #for numeric functions
-#from builtins import range
+from builtins import range
 import numpy as np
 
 #for netcdf files
@@ -40,22 +40,11 @@ import time as tm
 
 import R_smooth as sm
 
-try:
-    from pyamg import *
-    from pyamg.gallery import *
-    amg = True
-except:
-    print('no amg module')
-    amg = False
 
-try:
-    import gsw
-    is_gsw = True
-except:
-    print('no gsw module')
-    is_gsw = False
 
-from numba import njit
+
+
+
 
 #################################################
 # get_J1
@@ -347,23 +336,25 @@ def get_tendency(u,v,buoy,pm,pn):
     tend = -1*(bx * ux * bx + by * uy * bx + bx * vx * by + by * vy * by)
     
     return tend
-
-
+    
 #######################################################
 # Compute divergent part of the flow 
 # by solving Poisson equation for velocity potential
 #######################################################
 '''
 
+Note that we are using uniform grid spacing, which is fine for small
+scale grids but not for very large grids such as Pacific.
 
 We are using Dirichlet boundary conditions
 
 '''
-
+from pyamg import *
+from pyamg.gallery import *
 from scipy import *
 from scipy.linalg import *  
 
-def div2uvs(u,v,pm,pn,verbo=False,variable=True,fast=True):
+def div2uvs(u,v,pm,pn,verbo=False,variable=False,fast=False):
     
     if len(u.shape)>2:
         
@@ -387,7 +378,7 @@ def div2uvs(u,v,pm,pn,verbo=False,variable=True,fast=True):
 
 # if pm,pn is constant
 
-def div2uv(u,v,pm,pn,verbo=False,potential=False):
+def div2uv(u,v,pm,pn,verbo=False):
 
     pm = np.ones(pm.shape)*np.mean(pm)
     pn = np.ones(pm.shape)*np.mean(pn)
@@ -396,41 +387,32 @@ def div2uv(u,v,pm,pn,verbo=False,potential=False):
     div = np.zeros(pm.shape)
     div[1:-1,:] = div[1:-1,:] + diffx(u,rho2u(pm))
     div[:,1:-1] = div[:,1:-1] + diffy(v,rho2v(pn))
-    div[np.isnan(div)] =0
-
+    div[isnan(div)] =0
+    
+    # solve poisson
+    A = poisson(div.shape, format='csr')     # 2D Poisson problem 
+    ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
+    if verbo: print(ml)                                 # print hierarchy information
     b = -1*div.flatten()*1/(np.mean(pm)*np.mean(pn))  # right hand side
-
-    if amg:
-        A = poisson(div.shape, format='csr')     # 2D Poisson problem 
-        ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
-        if verbo: print(ml)                                 # print hierarchy information
-        x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
-    else:
-        A = poisson_matrix_fast(np.ones(pm.shape),np.ones(pm.shape))
-        x = spsolve(A,b)
-
+    x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
     if verbo: print("residual norm is", norm(b - A*x))  # compute norm of residual vector
-
-    if potential:
-        chi = x.reshape(div.shape)
-        return chi
-    else:
-        udiv = diffx(x.reshape(div.shape),pm)
-        vdiv = diffy(x.reshape(div.shape),pn)
-        return udiv,vdiv
-
+    
+    udiv = diffx(x.reshape(div.shape),pm)
+    vdiv = diffy(x.reshape(div.shape),pn)
+    
+    return udiv,vdiv
 
 
 ##################
 # test with variable pm,pn
 
-def div2uv_variable(u,v,pm,pn,verbo=False,fast=False,potential=False):
+def div2uv_variable(u,v,pm,pn,verbo=False,fast=False):
 
     # compute div
     div = np.zeros(pm.shape)
     div[1:-1,:] = div[1:-1,:] + diffx(u,rho2u(pm))
     div[:,1:-1] = div[:,1:-1] + diffy(v,rho2v(pn))
-    div[np.isnan(div)] =0
+    div[isnan(div)] =0
     
     # solve poisson
     #A = poisson(div.shape, format='csr')     # 2D Poisson problem 
@@ -441,179 +423,29 @@ def div2uv_variable(u,v,pm,pn,verbo=False,fast=False,potential=False):
     if fast:
         A = poisson_matrix_fast(pm,pn)
     else:
-        print('poisson matrix need to be checked!!!')
-        A = poisson_matrix(pm,pn)
-
+        A = poisson_matrix(pm,pn)    
     #######################################################
     #Solve matrix A
     A = A.tocsr()
     #######################################################
 
+    ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
+    if verbo: print(ml)                                 # print hierarchy information
     b = -1*div.flatten() # right hand side
-    if amg:
-        ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
-        if verbo: print(ml)                       # print hierarchy information
-        x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
-    else:
-        x = spsolve(A,b)
-
+    x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
     if verbo: print("residual norm is", norm(b - A*x))  # compute norm of residual vector
-
-    if potential:
-        chi = x.reshape(div.shape)
-        return chi
-    else:
-        udiv = diffx(x.reshape(div.shape),pm)
-        vdiv = diffy(x.reshape(div.shape),pn)
-        return udiv,vdiv
-
-
-##################
-# return divergent potential
-
-def div2pots(u,v,pm,pn,verbo=False,variable=True,fast=True):
-   
-    if len(u.shape)>2:
-       
-        chi = np.zeros((pm.shape[0],pm.shape[1],u.shape[2]))*np.nan
-       
-        for iz in range(u.shape[2]):
-            
-            if variable:
-                chi[:,:,iz] = div2uv_variable(u[:,:,iz],v[:,:,iz],pm,pn,verbo=verbo,fast=fast,potential=True)
-            else:
-                chi[:,:,iz] = div2uv(u[:,:,iz],v[:,:,iz],pm,pn,verbo=verbo,potential=True)
-    else:
-        
-        if variable:
-            chi = div2uv_variable(u,v,pm,pn,verbo=verbo,fast=fast,potential=True)
-        else:
-            chi = div2uv(u,v,pm,pn,verbo=verbo,potential=True)
-
-    return chi
-
-
-
-##################
-
-# if pm,pn is constant
-
-def rot2uv(u,v,pm,pn,verbo=False,potential=False):
     
-    pm = np.ones(pm.shape)*np.mean(pm)
-    pn = np.ones(pm.shape)*np.mean(pn)
-    # compute rot
-    rot = np.zeros(pm.shape)
-    rot[:,1:-1] = rot[:,1:-1] - rho2v(u2rho(diffy(u,rho2u(pn))))
-    rot[1:-1,:] = rot[1:-1,:] + rho2u(v2rho(diffx(v,rho2v(pm))))
-    rot[np.isnan(rot)] =0
+    udiv = diffx(x.reshape(div.shape),pm)
+    vdiv = diffy(x.reshape(div.shape),pn)
     
-    b = -1*rot.flatten()*1/(np.mean(pm)*np.mean(pn))  # right hand side
-    
-    if amg:
-        A = poisson(rot.shape, format='csr')     # 2D Poisson problem
-        ml= ruge_stuben_solver(A)                # construct the multigrid hierarchy
-        if verbo: print(ml)                                 # print hierarchy information
-        x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
-    else:
-        A = poisson_matrix_fast(np.ones(pm.shape),np.ones(pm.shape))
-        x = spsolve(A,b)
-    
-    if verbo: print("residual norm is", norm(b - A*x))  # compute norm of residual vector
-
-    if potential:
-        chi = x.reshape(rot.shape)
-        return chi
-    else:
-        urot = -rho2u(v2rho(diffy(x.reshape(rot.shape),pn)))
-        vrot = rho2v(u2rho(diffx(x.reshape(rot.shape),pm)))
-        return urot,vrot
-
-
+    return udiv,vdiv
 
 ##################
 # test with variable pm,pn
 
-def rot2uv_variable(u,v,pm,pn,verbo=False,fast=False,potential=False):
-    
-    # compute rot
-    rot = np.zeros(pm.shape)
-    rot[:,1:-1] = rot[:,1:-1] - diffy(rho2v(u2rho(u)),rho2v(pn))
-    rot[1:-1,:] = rot[1:-1,:] + diffx(rho2u(v2rho(v)),rho2u(pm))
-    rot[np.isnan(rot)] =0
-    
-    # solve poisson
-    #A = poisson(rot.shape, format='csr')     # 2D Poisson problem
-    #######################################################
-    #Create matrix A
-    #######################################################
-    print('creating matrix A')
-    if fast:
-        A = poisson_matrix_fast(pm,pn)
-    else:
-        print('poisson matrix need to be checked!!!')
-        A = poisson_matrix(pm,pn)
-    
-    #######################################################
-    #Solve matrix A
-    A = A.tocsr()
-    #######################################################
+def div2uv_noamg(u,v,pm,pn,verbo=False):
 
-    b = -1*rot.flatten() # right hand side
-    if amg:
-        ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
-        if verbo: print(ml)                       # print hierarchy information
-        x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
-    else:
-        x = spsolve(A,b)
-
-    if verbo: print("residual norm is", norm(b - A*x))  # compute norm of residual vector
-
-    if potential:
-        chi = x.reshape(rot.shape)
-        return chi
-    else:
-        urot = -rho2u(v2rho(diffy(x.reshape(rot.shape),pn)))
-        vrot = rho2v(u2rho(diffx(x.reshape(rot.shape),pm)))
-        return urot,vrot
-
-
-##################
-# return rotational streamfunction
-
-def rot2streams(u,v,pm,pn,verbo=False,variable=False,fast=False):
-
-
-    '''
-    22/08/23: the Fast option is unstable (e.g. /Users/gula/Desktop/Work/Everything/MEGATL/Scripts/Plots/check_streamfunction.ipynb )
-        not sure why yet
-    '''
-    
-    if len(u.shape)>2:
-        
-        rot_stream = np.zeros((pm.shape[0],pm.shape[1],u.shape[2]))*np.nan
-        
-        for iz in range(u.shape[2]):
-            if variable:
-                rot_stream[:,:,iz] = rot2uv_variable(u[:,:,iz],v[:,:,iz],pm,pn,verbo=verbo,fast=fast,potential=True)
-            else:
-                rot_stream[:,:,iz] = rot2uv(u[:,:,iz],v[:,:,iz],pm,pn,verbo=verbo,potential=True)
-    else:
-        if variable:
-            rot_stream = rot2uv_variable(u,v,pm,pn,verbo=verbo,fast=fast,potential=True)
-        else:
-            rot_stream = rot2uv(u,v,pm,pn,verbo=verbo,potential=True)
-
-    return rot_stream
-
-
-'''
-##################
-# test with variable pm,pn
-
-def div2uv_noamg(u,v,pm,pn,verbo=False,fast=False):
-
-    print 'using  div2uv_noamg (debug)'
+    print('using  div2uv_noamg (debug)')
     # compute div
     div = np.zeros(pm.shape)
     div[1:-1,:] = div[1:-1,:] + diffx(u,rho2u(pm))
@@ -625,28 +457,26 @@ def div2uv_noamg(u,v,pm,pn,verbo=False,fast=False):
     #######################################################
     #Create matrix A
     #######################################################
-    print 'creating matrix A'
-    if fast:
-        A = poisson_matrix_fast(pm,pn)
-    else:
-        A = poisson_matrix(pm,pn)
+    print('creating matrix A')
+    #A = poisson_matrix(pm,pn)
+    A = poisson_matrix_fast(pm,pn)
     #######################################################
     #Solve matrix A
     A = A.tocsr()
     #######################################################
 
     #ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
-    if verbo: print ml                                 # print hierarchy information
+    if verbo: print(ml)                                 # print hierarchy information
     b = -1*div.flatten() # right hand side
     #x = ml.solve(b, tol=1e-10)               # solve Ax=b to a tolerance of 1e-8
     x = spsolve(A,b)
-    if verbo: print "residual norm is", norm(b - A*x)  # compute norm of residual vector
+    if verbo: print("residual norm is", norm(b - A*x))  # compute norm of residual vector
 
     udiv = diffx(x.reshape(div.shape),pm)
     vdiv = diffy(x.reshape(div.shape),pn)
 
     return udiv,vdiv
-'''
+
 
 
 #######################################################
@@ -657,7 +487,8 @@ def div2uv_noamg(u,v,pm,pn,verbo=False,fast=False):
 
 
 '''
-
+from pyamg import *
+from pyamg.gallery import *
 from scipy import *
 from scipy.linalg import *  
 from scipy.sparse import *
@@ -749,7 +580,7 @@ def solve_omega(buoy,pm,pn,f,N2,depths,ur=None,vr=None,nh=1,forcing=0.,mixrotuv=
     #print 'N2.shape', N2.shape
     divQ = (Qxx + Qyy) #/N2
     
-    # smoothing...
+    # smooothing...
     if nh>1: 
         divQ = sm.moy_h(divQ,nh)
         f=  sm.moy_h(f,nh); 
@@ -805,9 +636,9 @@ def solve_omega(buoy,pm,pn,f,N2,depths,ur=None,vr=None,nh=1,forcing=0.,mixrotuv=
 
     
     # Method 1 
-    ml = ruge_stuben_solver(A)                 # construct the multigrid hierarchy
+    ml =ruge_stuben_solver(A)                # construct the multigrid hierarchy
     print(ml)                                 # print hierarchy information
-    X = ml.solve(R, tol=1e-8)                 # solve Ax=b to a tolerance of 1e-8
+    X = ml.solve(R, tol=1e-8)               # solve Ax=b to a tolerance of 1e-8
     print("residual norm is", norm(R - A*X))  # c
     print('Using ruge_stuben_solver.........', tm.time()-tstart)
 
@@ -1050,7 +881,8 @@ def omega_matrix_bottom(pm,pn,depths,f,N2,bbc=0):
 
 
 '''
-
+from pyamg import *
+from pyamg.gallery import *
 from scipy import *
 from scipy.linalg import *  
 from scipy.sparse import *
@@ -1443,7 +1275,175 @@ def genomega_matrix(pm,pn,depths,f,N2,vrt,u,v,terms):
 
     return A
        
+'''   
+#######################################################
+# Compute solution of TTW equation
+# 
+#######################################################
 
+from pyamg import *
+from pyamg.gallery import *
+from scipy import *
+from scipy.linalg import *  
+from scipy.sparse import *
+from scipy.sparse.linalg import spsolve
+import time as tm
+    
+def solve_ttw(bx,by,AKv0,sustr,svstr,f,pm,pn,depths,timing=False):
+    
+
+    if timing: tstart = tm.time() 
+    #######################################################
+    #Create forcing (bx,by)
+    #######################################################
+    new = np.zeros(AKv0.shape)
+
+    nz=len(depths); [nx,ny] = pm.shape; 
+    print 'number of points is ',nx,ny,nz
+    dz = depths[1]-depths[0]
+    dz2 = dz**2
+    ks = 2;
+    
+    #get gradients
+    #bx,by = copy(new),copy(new)
+    #bx[1:-1,:,:]= diffx(buoy,pm,2); by[:,1:-1,:] = diffy(buoy,pn,2)
+    
+    AKv = np.zeros((AKv0.shape[0],AKv0.shape[1],AKv0.shape[2]+1))
+    AKv[:,:,:-1] = AKv0[:]; AKv[:,:,-1] = AKv0[:,:,-2]; AKv[:,:,-2] = AKv0[:,:,-2]
+    del AKv0
+    
+    # Solutions
+    uz,vz = copy(new)*np.nan,copy(new)
+
+    #######################################################
+    # Create Matrix
+    #######################################################
+
+    ndim = 2*(nz+1);
+    A = lil_matrix((ndim,ndim))
+    R = np.zeros(ndim);
+
+    for i in range(nx): 
+    
+        if i%20==0: print 'solving equation:', round(100.* i/(nx-1)) , ' %'
+        
+        for j in range(ny): 
+        
+            A = lil_matrix((ndim,ndim))
+            
+            #idx = 0
+            #A[idx,idx+1] =  f[i,j];
+            #A[idx+1,idx] = -f[i,j];
+
+            #for k in range(1,nz):
+                #idx = 2*k;
+                #A[idx,idx+ks] = AKv[i,j,k+1]/dz2;
+                #A[idx,idx] =-AKv[i,j,k]/dz2 - AKv[i,j,k]/dz2;
+                #A[idx,idx-ks] = AKv[i,j,k-1]/dz2;
+                #A[idx,idx+1] = f[i,j];
+        
+                #A[idx+1,idx+1+ks] = AKv[i,j,k+1]/dz2;
+                #A[idx+1,idx+1] =-AKv[i,j,k]/dz2 - AKv[i,j,k]/dz2;
+                #A[idx+1,idx+1-ks] = AKv[i,j,k-1]/dz2;
+                #A[idx+1,idx] =-f[i,j];
+    
+            #idx = 2*nz;
+            #A[idx,idx] = AKv[i,j,-1];
+            #A[idx+1,idx+1] = AKv[i,j,-1];
+
+            #######################################################
+
+            idx = 0
+            A[idx+1,idx] =  f[i,j];
+            A[idx,idx+1] = -f[i,j];
+
+            for k in range(1,nz):
+                idx = 2*k;
+                A[idx+ks,idx] = AKv[i,j,k+1]/dz2;
+                A[idx,idx] =-AKv[i,j,k]/dz2 - AKv[i,j,k]/dz2;
+                A[idx-ks,idx] = AKv[i,j,k-1]/dz2;
+                A[idx+1,idx] = f[i,j];
+        
+                A[idx+1+ks,idx+1] = AKv[i,j,k+1]/dz2;
+                A[idx+1,idx+1] =-AKv[i,j,k]/dz2 - AKv[i,j,k]/dz2;
+                A[idx+1-ks,idx+1] = AKv[i,j,k-1]/dz2;
+                A[idx,idx+1] =-f[i,j];
+    
+            idx = 2*nz;
+            A[idx+1,idx] = AKv[i,j,-1];
+            A[idx,idx+1] = AKv[i,j,-1];
+            A = A*-1
+            
+            #######################################################
+
+            for k in range(nz):   
+                idx = 2*k
+                R[idx] = bx[i,j,k]
+                R[idx+1] = by[i,j,k]
+                
+   
+            # add winds (for Ekman effect)
+            #idx = 2*nz-4    
+            #R[idx] = R[idx]-sustr[i,j]
+            #R[idx+1] = R[idx+1]-svstr[i,j]            
+            
+            #idx = 2*nz-2    
+            #R[idx] = R[idx]+2*sustr[i,j]
+            #R[idx+1] = R[idx+1]+2*svstr[i,j]       
+            
+            #idx = 2*nz-2    
+            #R[idx] = R[idx]-sustr[i,j]
+            #R[idx+1] = R[idx+1]-svstr[i,j]       
+                  
+            idx = 2*nz    
+            R[idx] = sustr[i,j]
+            R[idx+1] = svstr[i,j]
+            
+            R[np.isnan(R)]=0
+            if timing: print 'Matrix definition OK.........', tm.time()-tstart               
+            if timing: tstart = tm.time()         
+
+            #######################################################
+            #Solve matrix A
+            #######################################################   
+
+            A = A.tocsr() 
+            
+            if timing: print 'Starting computation.........', tm.time()-tstart
+            if timing: tstart = tm.time()   
+  
+
+            X = spsolve(A,R)
+            del A
+            
+            if timing: print 'computation OK.........', tm.time()-tstart
+            if timing: tstart = tm.time()         
+            
+            #######################################################
+            
+            # reorder results in (i,j,k)
+            for k in range(nz):
+                idx = 2*k
+                uz[i,j,k] = X[idx];
+                vz[i,j,k] = X[idx+1];
+                
+            if timing: print 'allocation OK.........', tm.time()-tstart               
+            if timing: tstart = tm.time()  
+            
+    u = np.cumsum(uz,2)*dz
+    v = np.cumsum(vz,2)*dz  
+    
+    return u,v
+    
+    
+'''
+    
+  
+    
+#######################################################
+# Compute solution of TTW equation
+# 
+#######################################################
 #################################################
 # Compute solution of TTW equation on sigma levels
 # 
@@ -1587,6 +1587,166 @@ def solve_ttw(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,debug=0):
         return ut,vt,ug,vg  
     
    
+'''
+from Modules import *
+from Modules_gula import *
+
+from pyamg import *
+from pyamg.gallery import *
+from scipy import *
+from scipy.linalg import *  
+
+pm = np.ones((10,10))
+pn = np.ones((10,10))
+
+
+A = poisson(pm.shape, format='csr') 
+
+B = tools_g.poisson_matrix(pm,pn)
+B = B.tocsr()
+
+'''
+
+
+
+'''
+from pyamg import *
+from pyamg.gallery import *
+from scipy import *
+from scipy.linalg import *  
+from scipy.sparse import *
+from scipy.sparse.linalg import spsolve
+import time as tm
+import scipy.integrate as integrate
+ 
+def solve_ttw(bx,by,AKv0,sustr,svstr,f,pm,pn,depths,timing=False):
+    
+
+    if timing: tstart = tm.time() 
+    #######################################################
+    #Create forcing (bx,by)
+    #######################################################
+    new = np.zeros(AKv0.shape)
+
+    nz=len(depths); [nx,ny] = pm.shape; 
+    print 'number of points is ',nx,ny,nz
+    dz = depths[1]-depths[0]
+    dz2 = dz**2
+    ks = 2;
+    
+    #get gradients
+    #bx,by = copy(new),copy(new)
+    #bx[1:-1,:,:]= diffx(buoy,pm,2); by[:,1:-1,:] = diffy(buoy,pn,2)
+    
+    AKv = np.zeros((AKv0.shape[0],AKv0.shape[1],AKv0.shape[2]+1))
+    #AKv[:,:,:-1] = AKv0[:]; AKv[:,:,-1] = AKv0[:,:,-2]; AKv[:,:,-2] = AKv0[:,:,-2]
+    AKv[:,:,:-1] = AKv0[:]; AKv[:,:,-1] = AKv0[:,:,-3]; AKv[:,:,-2] = AKv0[:,:,-2]  
+    #AKv[:,:,:-1] = AKv0[:,:,:]; AKv[:,:,-1] = AKv0[:,:,-1]; del AKv0  
+
+
+    
+    # Solutions
+    uz,vz = copy(new)*np.nan,copy(new)
+
+    #######################################################
+    # Create Matrix
+    #######################################################
+
+    ndim = 2*(nz+1);
+    #A = lil_matrix((ndim,ndim))
+    #R = np.zeros(ndim);
+
+    for i in range(nx): 
+    
+        if i%20==0: print 'solving equation:', round(100.* i/(nx-1)) , ' %'
+        
+        for j in range(ny): 
+        
+            A = lil_matrix((ndim,ndim))
+            R = np.zeros(ndim);
+            
+            idx = 0
+            A[idx,idx+1] =  f[i,j];
+            A[idx+1,idx] = -f[i,j];
+
+            for k in range(1,nz):
+                idx = 2*k;
+                A[idx,idx+ks] = AKv[i,j,k+1]/dz2;
+                A[idx,idx] =-AKv[i,j,k]/dz2 - AKv[i,j,k]/dz2;
+                A[idx,idx-ks] = AKv[i,j,k-1]/dz2;
+                A[idx,idx+1] = f[i,j];
+        
+                A[idx+1,idx+1+ks] = AKv[i,j,k+1]/dz2;
+                A[idx+1,idx+1] =-AKv[i,j,k]/dz2 - AKv[i,j,k]/dz2;
+                A[idx+1,idx+1-ks] = AKv[i,j,k-1]/dz2;
+                A[idx+1,idx] =-f[i,j];
+    
+            idx = 2*nz;
+            A[idx,idx+1] = AKv[i,j,-1];
+            A[idx+1,idx] = AKv[i,j,-1];
+
+
+            
+            #######################################################
+
+            for k in range(nz):   
+                idx = 2*k
+                R[idx] = bx[i,j,k]
+                R[idx+1] = by[i,j,k]
+
+            idx = 2*nz    
+            R[idx] = svstr[i,j]
+            R[idx+1] = sustr[i,j]
+
+            
+            if i==20 and j==80: 
+                print R
+                print AKv[i,j,:]         
+            if timing: print 'Matrix definition OK.........', tm.time()-tstart               
+            if timing: tstart = tm.time()         
+
+            #######################################################
+            #Solve matrix A
+            #######################################################   
+
+            A = A.tocsr() 
+            
+            if timing: print 'Starting computation.........', tm.time()-tstart
+            if timing: tstart = tm.time()   
+  
+
+            X = spsolve(A,R)
+            del A
+            
+            if timing: print 'computation OK.........', tm.time()-tstart
+            if timing: tstart = tm.time()         
+            
+            #######################################################
+            
+            # reorder results in (i,j,k)
+            for k in range(nz):
+                idx = 2*k
+                uz[i,j,k] = X[idx];
+                vz[i,j,k] = X[idx+1];
+                
+            if timing: print 'allocation OK.........', tm.time()-tstart               
+            if timing: tstart = tm.time()  
+            
+    #u = np.cumsum(uz,2)*dz
+    #v = np.cumsum(vz,2)*dz  
+    
+    u,v = copy(new), copy(new)
+    print uz.shape,len(depths)
+    u[:,:,1:] = integrate.cumtrapz(uz,dx=dz, axis=2 )
+    v[:,:,1:] = integrate.cumtrapz(vz,dx=dz, axis=2 )
+    
+    #ut[:,:,:-1] = integrate.cumtrapz(uz[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1]
+    #vt[:,:,:-1] = integrate.cumtrapz(vz[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1]
+    #ug[:,:,:-1] = (integrate.cumtrapz(-by[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1].T/f.T).T
+    #vg[:,:,:-1] = (integrate.cumtrapz(bx[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1].T/f.T).T
+    
+    return u,v
+'''
     
 #######################################################
 # Compute solution of TTW equation on sigma levels
@@ -1599,7 +1759,7 @@ from scipy.sparse.linalg import spsolve
 import scipy.integrate as integrate
 import time as tm
  
-def solve_ttw_sig(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
+def solve_ttw_sig(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,debug=0,ekman=0):
     
     '''
     AKv and bx,by are on vertical w levels
@@ -1780,8 +1940,10 @@ def solve_ttw_sig(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
     #######################################################
 
     
-    if ekman==1:
-        return ut,vt,ug,vg,uek,vek
+    if debug==1 and ekman==1:
+        return ut,vt,ug,vg,uz,vz,uek,vek
+    elif debug==1:
+        return ut,vt,ug,vg,uz,vz  
     else:
         return ut,vt,ug,vg  
     
@@ -1798,7 +1960,7 @@ from scipy.sparse.linalg import spsolve
 import scipy.integrate as integrate
 import time as tm
  
-def solve_ttw_sig_fast(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
+def solve_ttw_sig_fast(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,debug=0):
     
     '''
     AKv and bx,by are on vertical w levels
@@ -1822,9 +1984,7 @@ def solve_ttw_sig_fast(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
 
     # Solutions
     uz,vz = copy(new),copy(new)
-    if ekman:
-         uze,vze = copy(new),copy(new)
-
+    
     #######################################################
     # Create Matrix
     #######################################################
@@ -1867,15 +2027,9 @@ def solve_ttw_sig_fast(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
                 R[idx+1] = by[i,j,k]
 
 
-            if ekman==1:
-                # Compute separately the Ekman part
-                idx =idx0 + 2*nz
-                R[idx] = 0.
-                R[idx+1] = 0.
-            else:
-                idx =idx0 + 2*nz
-                R[idx] = svstr[i,j]
-                R[idx+1] = sustr[i,j]
+            idx =idx0 + 2*nz    
+            R[idx] = svstr[i,j]
+            R[idx+1] = sustr[i,j]
                 
         
     if timing: print('Matrix definition OK.........', tm.time()-tstart)               
@@ -1918,35 +2072,7 @@ def solve_ttw_sig_fast(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
     if timing: print('allocation OK.........', tm.time()-tstart)               
     if timing: tstart = tm.time()  
     
-             
-    #######################################################
-
-    if ekman==1:
-        
-        R = np.zeros(ndim);
-
-        for i in range(1,nx-1): 
-            for j in range(1,ny-1):
-                idx0 = (i-1)*(ny-2)*2*(nz+1) + (j-1)*2*(nz+1)
-                idx =idx0 + 2*nz
-                R[idx] = svstr[i,j]
-                R[idx+1] = sustr[i,j]
-                   
-        X = spsolve(A,R)
-                
-        #######################################################
-
-        for i in range(1,nx-1): 
-            for j in range(1,ny-1):         
-                # reorder results in (i,j,k)
-                for k in range(nz+1):
-                    idx = (i-1)*(ny-2)*2*(nz+1) + (j-1)*2*(nz+1) +2*k
-                    uze[i,j,k] = X[idx];
-                    vze[i,j,k] = X[idx+1];
-
-        #######################################################
-            
-
+ 
 
     #######################################################
     # Integrate vertically to get u,v,ug,vg
@@ -1966,25 +2092,44 @@ def solve_ttw_sig_fast(bx,by,AKv,sustr,svstr,f,pm,pn,z_w,timing=False,ekman=0):
 
     #######################################################
     
-
-    #######################################################
-    if ekman==1:
-        
-        uek,vek= copy(new[:,:,:]), copy(new[:,:,:])
-        uek[:,:,1:] = integrate.cumtrapz(uze,z_w, axis=2 )
-        vek[:,:,1:] = integrate.cumtrapz(vze,z_w, axis=2 )   
-        
-        uek = 0.5*(uek[:,:,1:] + uek[:,:,:-1])
-        vek = 0.5*(vek[:,:,1:] + vek[:,:,:-1])
-
+    #ut[:,:,:-1] = integrate.cumtrapz(uz[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1]
+    #vt[:,:,:-1] = integrate.cumtrapz(vz[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1]
+    #ug[:,:,:-1] = (integrate.cumtrapz(-by[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1].T/f.T).T
+    #vg[:,:,:-1] = (integrate.cumtrapz(bx[:,:,::-1],z_w[:,:,::-1], axis=2 )[:,:,::-1].T/f.T).T
+    
+    
     #######################################################
 
     
-    if ekman==1:
-        return ut,vt,ug,vg,uek,vek
+    if debug==1:
+        return ut,vt,ug,vg,uz,vz  
     else:
         return ut,vt,ug,vg  
     
+   
+'''
+from Modules import *
+from Modules_gula import *
+
+from pyamg import *
+from pyamg.gallery import *
+from scipy import *
+from scipy.linalg import *  
+
+pm = np.ones((10,10))
+pn = np.ones((10,10))
+
+
+A = poisson(pm.shape, format='csr') 
+
+B = tools_g.poisson_matrix(pm,pn)
+B = B.tocsr()
+
+'''
+
+
+
+
 
 
 
@@ -2028,8 +2173,8 @@ def poisson_matrix(pm,pn):
 
 
     # normalize A; otherwise it is singular
-    #i = nx//2;
-    #j = ny//2;
+    #i = nx/2;
+    #j = ny/2;
     #idx0 = (i-1)*ny + j-1;
     #A[idx0,:] = 0;
     #A[idx0,idx0] = np.sqrt(dx2i*dy2i);
@@ -2051,8 +2196,8 @@ def poisson_matrix_fast(pm,pn):
     
     ############################
 
-    Dxx = spdiags([-pm[:,ny//2]**2, 2*pm[:,ny//2]**2, -pm[:,ny//2]**2], [-1, 0, 1], nx, nx)
-    Dyy = spdiags([-pn[nx//2,:]**2, 2*pn[nx//2,:]**2, -pn[nx//2,:]**2], [-1, 0, 1], ny, ny)
+    Dxx = spdiags([-pm[:,ny/2]**2, 2*pm[:,ny/2]**2, -pm[:,ny/2]**2], [-1, 0, 1], nx, nx)
+    Dyy = spdiags([-pn[nx/2,:]**2, 2*pn[nx/2,:]**2, -pn[nx/2,:]**2], [-1, 0, 1], ny, ny)
     A = kronsum(Dxx, Dyy)
 
     return A
@@ -2095,112 +2240,6 @@ def rhop(T,S):
     RB = b0 + (b1 + (b2 + (b3 + b4*T)*T)*T)*T
     RC = c0 + (c1 + c2*T)*T
     return SMOW + RB*S + RC*(S**1.5) + d0*S*S 
-
-
-
-
-######################################################  
-def rho1_gsw(T,S,z_r,x,y):
-######################################################  
-    """Potential Density of seawater at 1000 m"""
-    if is_gsw:
-
-        p       = gsw.p_from_z(z_r,np.tile(y[:,:,None],(1,z_r.shape[-1])))
-        SA      = gsw.SA_from_SP(S,p,np.tile(x[:,:,None],(1,z_r.shape[-1])),np.tile(y[:,:,None],(1,z_r.shape[-1])))
-        CT      = gsw.CT_from_pt(SA,T)
-        rhop    = gsw.rho(SA,CT,1000)
-        # gsw.sigma1(SA,CT) + 1000 is the same than gsw.rho(SA,CT,1000)
-
-        #########################################
-        return rhop
-
-    else:
-        print('no gsw module')
-
-
-
-
-######################################################  
-
-@njit
-def first_index_smaller(arr,val,order=1):
-    if order==1: indices = range(len(arr))
-    else: indices = range(len(arr)-1,-1,-1)
-    for idx in indices:
-        if arr[idx] <= val:
-            return idx
-    return idx
-
-@njit
-def first_index_larger(arr,val,order=1):
-    if order==1: indices = range(len(arr))
-    else: indices = range(len(arr)-1,-1,-1)
-    for idx in indices:
-        if arr[idx] >= val:
-            return idx
-    return idx
-
-
-######################################################  
-@njit
-def get_ekman(AKv,z_r,z_w,f,val=2e-4):
-######################################################  
-    """Get Ekman number averaged over active-mixing ML"""    
-    var = np.full_like(f,np.nan)
-
-    for i in range(var.shape[0]):
-        for j in range(var.shape[1]):
-            kv = 0.5 * (AKv[i,j,1:] + AKv[i,j,:-1])
-            k_hbl = first_index_smaller(kv,val,order=-1);
-            hbl = -z_r[i,j,k_hbl]
-            Hz = z_w[i,j,1:] - z_w[i,j,:-1]
-            var[i,j] = np.nansum(kv[k_hbl:]*Hz[k_hbl:])\
-                     / (np.nansum(Hz[k_hbl:]) * f[i,j] * hbl**2)
-    return var
-
-######################################################  
-@njit
-def get_ekman_rho(AKv,rho,z_r,z_w,f,val = 0.03):
-######################################################  
-    """Get Ekman number averaged over rho-defined ML""" 
-    var = np.full_like(f,np.nan)
-    for i in range(rho.shape[0]):
-        for j in range(rho.shape[1]):
-            kv = 0.5 * (AKv[i,j,1:] + AKv[i,j,:-1])
-            k_hbl = first_index_larger(rho[i,j,:],rho[i,j,-1]+val,order=-1); 
-            hbl = -z_r[i,j,k_hbl]
-            Hz = z_w[i,j,1:] - z_w[i,j,:-1]
-            var[i,j] = np.nansum(kv[k_hbl:]*Hz[k_hbl:])\
-                     / (np.nansum(Hz[k_hbl:]) * f[i,j] * hbl**2)
-    return var
-
-
-######################################################
-@njit
-def get_hbls(AKv,z_w,val=2e-4):
-######################################################
-    """Get active-mixing ML"""
-    var = np.full_like(z_w[:,:,0],np.nan)
-
-    for i in range(var.shape[0]):
-        for j in range(var.shape[1]):
-            k_hbl = first_index_smaller(AKv[i,j,:],val,order=-1);
-            var[i,j] = -z_w[i,j,k_hbl]
-    return var
-
-######################################################  
-@njit
-def get_hbls_rho(rho,z_r,val = 0.03):
-######################################################  
-    """Get Ekman number averaged over rho-defined ML"""
-    var = np.full_like(rho[:,:,0],np.nan)
-    for i in range(rho.shape[0]):
-        for j in range(rho.shape[1]):
-            k_hbl = first_index_larger(rho[i,j,:],rho[i,j,-1]+val,order=-1);
-            var[i,j] = -z_r[i,j,k_hbl]
-    return var
-
-
 
 
 

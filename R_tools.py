@@ -137,7 +137,8 @@ def get_depth(simul,**kwargs):
 #######################################################
 
 
-def vinterp(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1, floattype=np.float64,interp_sfc=1,interp_bot=0,below=None,verbo=False,bounded=False,**kwargs):
+def vinterp(var, depths, z_r, z_w=None, mask=None,imin=0,jmin=0,kmin=1,\
+            floattype=np.float64,interp_sfc=1,interp_bot=0,below=None,verbo=False,bounded=False,**kwargs):
 
     '''
     var  = variable to interpolate

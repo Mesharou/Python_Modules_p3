@@ -666,7 +666,20 @@ class var(object):
                 var = var[:,:,depth]
             #var= tools.nanbnd(var)
 
+        ################################################
 
+        elif self.name in ['omega']:
+            
+            #Requires 3d velocities
+            u = self.load('u',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            v = self.load('v',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            
+            [z_r,z_w] = tools.get_depths(simul,coord=coord)
+            var = tools.nanbnd(toolsF.get_omega(u,v,z_r,z_w,pm,pn))
+            
+            if (min(depths)>0):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
                     
         ################################################
         
@@ -1096,25 +1109,6 @@ class var(object):
         return [alpha, beta]
 
 
-
-
-#######################################################
-#Compute correlation between variable and observations
-#######################################################
-
-
-    def correlation_dong(variable,obs):
-                 
-        return 0.95
-    
-    #######################################################
-
-
-    def correlation_dong_optimale(variable,obs):
-                 
-        return 0.97
-    
-        
 
 
 

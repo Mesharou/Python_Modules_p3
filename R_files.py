@@ -394,7 +394,7 @@ example: for an interactive session:
         elif len(args[0])==1:
 
             self.simul=args[0][0]
-            self.domain='[0,10000,0,10000,[1,1000,1]]'
+            self.domain='[0,100000,0,100000,[1,1000,1]]'
             self.ncname=files(self.simul, time=0, output = self.output)
             try:
                 self.time0=self.ncname.tstart
@@ -911,27 +911,27 @@ example: for an interactive session:
         if self.output: print('dt is read in ',self.ncfile)
         try:
             if self.ncname.model in ['ucla','croco_lionel']:
-                self.dt = np.array(ncfile.variables['ocean_time'][1]) \
-                        - np.array(ncfile.variables['ocean_time'][0])
+                self.dt = np.array(ncfile.variables['ocean_time'][-1]) \
+                        - np.array(ncfile.variables['ocean_time'][-2])
             elif  self.ncname.model in ['croco','agrif_jc']:
-                self.dt = np.array(ncfile.variables['scrum_time'][1]) \
-                        - np.array(ncfile.variables['scrum_time'][0])
+                self.dt = np.array(ncfile.variables['scrum_time'][-1]) \
+                        - np.array(ncfile.variables['scrum_time'][-2])
             elif  self.ncname.model in ['croco_xios']:
-                self.dt = np.array(ncfile.variables['time_counter'][1]) \
-                        - np.array(ncfile.variables['time_counter'][0])
+                self.dt = np.array(ncfile.variables['time_counter'][-1]) \
+                        - np.array(ncfile.variables['time_counter'][-2])
             else:
-                self.dt = np.array(ncfile.variables['time'][1]) \
-                        - np.array(ncfile.variables['time'][0])
+                self.dt = np.array(ncfile.variables['time'][-1]) \
+                        - np.array(ncfile.variables['time'][-2])
         except:
             try:
-                self.dt = np.array(ncfile.variables['ocean_time'][1]) \
-                        - np.array(ncfile.variables['ocean_time'][0])
+                self.dt = np.array(ncfile.variables['ocean_time'][-1]) \
+                        - np.array(ncfile.variables['ocean_time'][-2])
             except:
                 if self.simul[:4]=='natl' or 'daily' in self.simul: self.dt = 24. * 3600
                 elif self.simul =='atlbig_mean2': self.dt = 24. * 3600 * 5.
                 else: self.dt = 0
         
-
+        if self.output: print('dt is ',self.dt)
         ncfile.close()
         if self.output: print('file closed in dt')
 
@@ -3219,6 +3219,8 @@ class files(object):
                 folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_diagnostics_tracer_230419'
             elif 'diagnostics_tracer_240228' in simul:
                 folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_diagnostics_energy_240228'
+            elif 'diagnostics_tracer_240930' in simul:
+                folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_diagnostics_tracer_240930'
             elif 'tracer' in simul:
                 folder = libra + '/gula/ROMS/test_roms/test_budget/test_budget_gulfstream_tracer'
             else:
@@ -3236,7 +3238,12 @@ class files(object):
             elif 'UP3' in simul and 'NOTSADV' in simul: out = '/OUT_UP3_NOTSADV'
             elif 'UP3' in simul: out = '/OUT_UP3'
             elif 'UP5' in simul: out = '/OUT_UP5'
+            elif 'WENO5C2' in simul: out = '/OUT_WENO5C2'
+            elif 'SPLINESC2' in simul: out = '/OUT_SPLINESC2'
+            elif 'C2C2' in simul: out = '/OUT_C2C2'        
             elif 'WENO5' in simul: out = '/OUT_WENO5'
+            elif 'SPLINES' in simul: out = '/OUT_SPLINES'
+            elif 'C2' in simul: out = '/OUT_C2'
             else: out = '/OUT'
 
             if 'avg' in simul:
@@ -4714,10 +4721,42 @@ class files(object):
                 self.grd= folder + 'daily/gigatl1_1h_tides_region_02_2009-02-01.nc'
                 region = 'region_02'
                 #self.realyear_tstart = datetime(2009,2,1)
+            elif 'swot' in simul and '24h' in simul:
+                folder = folder0 + 'SWOT/'
+                self.grd= folder + 'gigatl1_1h_tides_swot_24h_2008-03-14.nc'
+                region = 'swot_24h'
+            elif 'brasin' in simul:
+                folder = folder0 + 'Brasin/' #for irene
+                if 'tides' in simul:
+                    self.grd= folder + 'gigatl1_1h_tides_brasin_2009-07-01.nc'
+                else:
+                    self.grd= folder + 'gigatl1_1h_brasin_2009-07-01.nc'
+                region = 'brasin'
             elif 'cape_verde' in simul:
                 folder = folder0 + 'zoom_for_CV/'
                 self.grd= folder + 'gigatl1_1h_tides_cape_verde_2009-02-01.nc'
                 region = 'cape_verde'
+            elif 'cossmoss' in simul and 'daily' in simul :
+                folder = folder0 + 'zoom_for_cossmoss/'
+                #folder = folder0 + 'Cossmoss/'
+                self.grd= folder + 'gigatl1_1h_tides_cossmoss_daily_2009-01-01.nc'
+                region = 'cossmoss'
+            elif 'cossmoss' in simul:
+                #folder = folder0 + 'zoom_for_cossmoss/'
+                folder = folder0 + 'Cossmoss/'
+                self.grd= folder + 'gigatl1_1h_tides_cossmoss_1h_2008-03-14.nc'
+                region = 'cossmoss_1h'
+            elif 'crossroads' in simul:
+                folder = folder0 + 'zoom_for_crossroads/'
+                #folder = folder0 + 'Crossroads/'           
+                self.grd= folder + 'gigatl1_1h_tides_crossroads_daily_2008-03-14.nc'
+                region = 'crossroads'
+                hourly_name = '_1h_'
+            elif 'equator' in simul:
+                #folder = folder0 + 'zoom_for_equator/' #for irene
+                folder = folder0 + 'Equator/' #for datarmor
+                self.grd= folder + 'gigatl1_1h_tides_equator_2008-03-14.daily.nc'
+                region = 'equator'
             elif 'eurec4a' in simul:
                 #folder = folder0 + 'zoom_for_eurec4a/'
                 folder = folder0 + 'Eurec4a/'
@@ -4727,17 +4766,25 @@ class files(object):
                 folder = folder0 + 'zoom_for_gulfstream/'
                 self.grd= folder + 'gigatl1_1h_tides_gulfstream_1h_2008-03-14.nc'
                 region = 'gulfstream_1h'
-            elif 'crossroads' in simul:
-                folder = folder0 + 'zoom_for_crossroads/'
-                #folder = folder0 + 'Crossroads/'           
-                self.grd= folder + 'gigatl1_1h_tides_crossroads_daily_2008-03-14.nc'
-                region = 'crossroads'
-                hourly_name = '_1h_'
-            elif 'cossmoss' in simul:
-                #folder = folder0 + 'zoom_for_cossmoss/'
-                folder = folder0 + 'Cossmoss/'
-                self.grd= folder + 'gigatl1_1h_tides_cossmoss_1h_2008-03-14.nc'
-                region = 'cossmoss_1h'
+            elif 'iberia2' in simul:
+                folder = folder0 + 'zoom_for_iberia/'
+                self.grd= folder + 'gigatl1_1h_tides_iberia2_daily_2008-03-14.nc'
+                region = 'iberia2'
+            elif 'iberia' in simul:
+                folder = folder0 + 'zoom_for_iberia/'
+                self.grd= folder + 'gigatl1_1h_tides_iberia_daily_2008-03-14.nc'
+                region = 'iberia'
+            elif 'iceland' in simul:
+                folder = folder0 + 'zoom_for_iceland/'
+                self.grd= folder + 'gigatl1_1h_tides_iceland_2009-01-01.nc'
+                region = 'iceland'
+            elif 'latmix' in simul:
+                folder = folder0 + 'zoom_for_latmix/' #for irene
+                if 'tides' in simul:
+                    self.grd= folder + 'gigatl1_1h_tides_latmix_2009-04-01.nc'
+                else:
+                    self.grd= folder + 'gigatl1_1h_latmix_2009-03-21.nc'
+                region = 'latmix'
             elif 'malvinas' in simul:
                 folder = folder0 + 'zoom_for_malvinas/'
                 self.grd= folder + 'gigatl1_1h_tides_malvinas_2009-08-01.nc'
@@ -4750,38 +4797,19 @@ class files(object):
                     region = 'plain'
                 else:
                     region = 'plain_1h'         
-            elif 'iceland' in simul:
-                folder = folder0 + 'zoom_for_iceland/'
-                self.grd= folder + 'gigatl1_1h_tides_iceland_2009-01-01.nc'
-                region = 'iceland'
+            elif 'porcup' in simul:
+                folder = folder0 + 'zoom_for_porcup/'
+                self.grd= folder + 'gigatl1_1h_tides_porcup_1h_2008-03-14.nc'
+                region = 'porcup_1h'
+            elif 'rio' in simul:
+                folder = folder0 + 'zoom_for_rio/'
+                self.grd= folder + 'gigatl1_1h_tides_rio_1h_2009-01-01.nc'
+                region = 'rio_1h'
             elif 'rockall' in simul:
                 #folder = folder0 + 'zoom_for_rockall/'
                 folder = folder0 + 'rockall/'
                 self.grd= folder + 'gigatl1_1h_tides_rockall_1h_2008-08-26.nc'
                 region = 'rockall_1h'                
-            elif 'iberia' in simul:
-                folder = folder0 + 'zoom_for_iberia/'
-                self.grd= folder + 'gigatl1_1h_tides_iberia_daily_2008-03-14.nc'
-                region = 'iberia'
-            elif 'equator' in simul:
-                #folder = folder0 + 'zoom_for_equator/' #for irene
-                folder = folder0 + 'Equator/' #for datarmor
-                self.grd= folder + 'gigatl1_1h_tides_equator_2008-03-14.daily.nc'
-                region = 'equator'
-            elif 'brasin' in simul:
-                folder = folder0 + 'Brasin/' #for irene
-                if 'tides' in simul:
-                    self.grd= folder + 'gigatl1_1h_tides_brasin_2009-07-01.nc'
-                else:
-                    self.grd= folder + 'gigatl1_1h_brasin_2009-07-01.nc'
-                region = 'brasin'
-            elif 'latmix' in simul:
-                folder = folder0 + 'zoom_for_latmix/' #for irene
-                if 'tides' in simul:
-                    self.grd= folder + 'gigatl1_1h_tides_latmix_2009-04-01.nc'
-                else:
-                    self.grd= folder + 'gigatl1_1h_latmix_2009-03-21.nc'
-                region = 'latmix'
                 
 
             if 'mean' in simul and 'daily' in simul:
@@ -4813,6 +4841,15 @@ class files(object):
                 self.model = 'croco_gigatl1'
                 self.digits = 0
                 #self.fileformat = '.daily.nc'
+                self.fileformat = '.nc' 
+            elif '24h' in  simul:
+                #self.his = folder + 'gigatl1_1h_tides_' + region + '_'
+                self.his = folder + 'gigatl1_1h_tides_' + region + '_'
+                self.tfile=1
+                self.dtfile=24*3600
+                self.tend=100000
+                self.model = 'croco_gigatl1'
+                self.digits = 0
                 self.fileformat = '.nc' 
             elif '12h' in  simul:
                 self.his = folder + 'gigatl1_1h_tides_' + region + '_'
@@ -5129,7 +5166,10 @@ class files(object):
             elif 'gigatl3_1h_UP5' in simul:
                 folder_name= 'GIGATL3_1h_UP5/'
             elif 'gigatl3_1h' in simul:
-                folder_name= 'GIGATL3_1h/'
+                if time < 2330:
+                    folder_name= 'GIGATL3_1h_UP5/'
+                else:
+                    folder_name= 'GIGATL3_1h/'
             elif 'gigatl3_6h' in simul:
                 folder_name= 'GIGATL3_6h/'
 
@@ -5529,7 +5569,93 @@ class files(object):
 
             self.frc=folder + 'leewa_frc.nc'
             self.wind=folder + 'leewa_frc.nc'
+            
 
+        ##################
+
+        elif 'rrexnum' in simul and 'rest' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(1979,1,1)
+            self.realyear_tstart = datetime(2008,8,26,12)
+
+            if 'rrexnum50' in simul:
+                folder_name= 'RREXNUM50_REST_NOFILT_T/'
+                file_his = 'rrexnum50'
+            elif 'rrexnums50' in simul:
+                folder_name= 'RREXNUMS50_REST_NOFILT_T/'
+                file_his = 'rrexnum50'
+            elif 'rrexnum100' in simul:
+                folder_name= 'RREXNUM100_REST_NOFILT_T/'
+                file_his = 'rrexnum100'
+            elif 'rrexnums100' in simul:
+                folder_name= 'RREXNUMS100_REST_NOFILT_T/'
+                file_his = 'rrexnum100'
+            elif 'rrexnum200' in simul:
+                folder_name= 'RREXNUM200_REST_NOFILT_T/'     
+                file_his = 'rrexnum200'
+            elif 'rrexnums200' in simul:
+                folder_name= 'RREXNUMS200_REST_NOFILT_T/'     
+                file_his = 'rrexnum200'
+            else:
+                folder_name= 'RREXNUM50/'
+
+            if os.getenv('HOSTNAME') is None:
+                folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name + 'HIS/'
+                folder_grd = libra +'/gula/ROMS/Simulations/RREXNUM'
+            else:
+                folder = '/home/datawork-lops-megatl/RREXNUM/' + folder_name + 'HIS/'
+                folder_grd = '/home/datawork-lops-rrex/jgula/INIT_RREXNUM50/GRD'
+            
+            # add case number (should be lat in simul name)
+            folder = folder + simul.split('_')[-1]
+            
+            if 'rrexnums' in simul:
+                self.grd = folder_grd + '/rrexnums_grd.nc'
+            else:
+                self.grd = folder_grd + '/rrexnum_grd.nc'
+
+            
+            self.model = 'croco'
+            self.digits = 5
+        
+            self.tstart=0
+            self.tend=10000
+            
+            if 'avg' in simul:
+                self.tfile=1
+                if 'vrt' in simul:
+                    self.his = folder + '/' + file_his + '_diags_vrt_avg.'
+                elif 'ek' in simul:
+                    self.his = folder +  '/' + file_his + '_diags_ek_avg.'
+                elif 'uv' in simul:
+                    self.his = folder + '/' + file_his + '_diaM_avg.'
+                elif 'ts' in simul:
+                    self.his = folder + '/' + file_his + '_diaT_avg.'
+                elif 'pv' in simul:
+                    self.his = folder + '/' + file_his + '_diags_pv_avg.'
+                elif 'wdia' in simul:
+                    self.his = folder + '/' + file_his + '_diags_wdia_avg.'                    
+                else:
+                    self.his = folder + '/' + file_his + '_avg.'
+            else:
+                self.tfile=2
+                if 'vrt' in simul:
+                    self.his = folder +  '/' + file_his + '_diags_vrt.'
+                elif 'ek' in simul:
+                    self.his = folder + '/' + file_his + '_diags_ek.'
+                elif 'uv' in simul:
+                    self.his = folder +  '/' + file_his + '_diaM.'
+                elif 'ts' in simul:
+                    self.his = folder +  '/' + file_his + '_diaT.'
+                elif 'pv' in simul:
+                    self.his = folder +  '/' + file_his + '_diags_pv.'
+                elif 'wdia' in simul:
+                    self.his = folder +  '/' + file_his + '_diags_wdia.'
+                else:
+                    self.his = folder +  '/' + file_his + '_his.'
+
+        ##################
         ##################
 
         elif 'rrexnum50' in simul:
@@ -5844,22 +5970,57 @@ class files(object):
                 folder_name= 'RREXNUM200_notides/'
             elif 'rrexnums200_RSUP5_NOFILT' in simul:
                 folder_name= 'RREXNUMS200_RSUP5_NOFILT/'   
+            elif 'rrexnumsb200_RSUP5_NOFILT' in simul and 'hourly' in simul:
+                folder_name= 'RREXNUMSB200_RSUP5_NOFILT_HOURLY/' 
             elif 'rrexnumsb200_RSUP5_NOFILT' in simul:
-                folder_name= 'RREXNUMSB200_RSUP5_NOFILT/'   
+                folder_name= 'RREXNUMSB200_RSUP5_NOFILT/'
+            elif 'rrexnumsb200_RSVWENO5_NOFILT_TRACER_nodiag_Noemie_6h' in simul:
+                folder_name= 'RREXNUMSB200_RSVWENO5_NOFILT_TRACER_nodiag_Noemie_6h/'  
+            elif 'rrexnumsb200_RSVWENO5_NOFILT_TRACER_nodiag_Noemie' in simul:
+                folder_name= 'RREXNUMSB200_RSVWENO5_NOFILT_TRACER_nodiag_Noemie/'  
+            elif 'rrexnumsb200_RSVWENO5_NOFILT_TRACER_Noemie' in simul:
+                folder_name= 'RREXNUMSB200_RSVWENO5_NOFILT_TRACER_Noemie/'  
+            elif 'rrexnumsb200_RSVWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUMSB200_RSVWENO5_NOFILT/'  
+            elif 'rrexnumsb200_RSVWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUMSB200_RSVWENO5_NOFILT/'   
+            elif 'rrexnumsb200_RSVVWENO5_NOFILT' in simul:
+                folder_name= 'RREXNUMSB200_RSVVWENO5_NOFILT/' 
             else:
                 folder_name= 'RREXNUM200/'
-                
-            if 'tracer' in simul:
-                folder_name= folder_name[:-1] + '_T/'
 
+            if 'tracer' in simul:
+                if '1km' in simul:
+                    if 'bblz10m' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/z10m_1km/'
+                    elif 'bblz' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/z_1km/'
+                    elif 'bblsigma' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/sigma_1km/'
+                    elif 'bblrho' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/rho_1km/'
+                elif '2km' in simul:
+                    if 'bblz10m' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/z10m_2km/'
+                    elif 'bblz' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/z_2km/'
+                    elif 'bblsigma' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/sigma_2km/'
+                    elif 'bblrho' in simul:
+                        folder_name= folder_name[:-1] + '_TRACER/HIS/rho_2km/'
+                else:
+                    folder_name= folder_name[:-1] + '_T/HIS/' 
+            else:
+                folder_name = folder_name + 'HIS/'
+                
             if os.getenv('HOSTNAME') is None:
-                folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name + 'HIS/'
+                folder = libra +'/gula/ROMS/Simulations/RREXNUM/' + folder_name
                 folder_grd = libra +'/gula/ROMS/Simulations/RREXNUM'
             else:
-                if 'tracer' in simul:
-                    folder = '/home/datawork-lops-megatl/RREXNUM/' + folder_name + 'HIS/'
+                if 'TRACER' in simul or 'tracer' in simul or 'hourly' in simul:
+                    folder = '/home/datawork-lops-megatl/RREXNUM/' + folder_name
                 else:
-                    folder = '/home/datawork-lops-rrex/jgula/' + folder_name + 'HIS/'
+                    folder = '/home/datawork-lops-rrex/jgula/' + folder_name
                 folder_grd = '/home/datawork-lops-rrex/jgula/INIT_RREXNUM100/GRD'
             
             if 'rrexnums' in simul:
@@ -5870,7 +6031,6 @@ class files(object):
             self.model = 'croco'
             self.digits = 5
             
-
             self.tstart=0
             self.tend=10000
             
@@ -5926,7 +6086,7 @@ class files(object):
                     else:
                         self.his = folder + '/rrexnum200_avg.'
             else:
-                self.tfile=2
+
                 if 'vrt' in simul:
                     self.his = folder +  '/rrexnum200_diags_vrt.'
                 elif 'ek' in simul:
@@ -5942,7 +6102,14 @@ class files(object):
                 else:
                     self.his = folder +  '/rrexnum200_his.'
 
-            
+                if 'Noemie' in simul:
+                    self.tfile=24
+                else:
+                    self.tfile=2
+            if 'hourly' in simul:
+                self.tfile=24
+                
+
 
 # old version
         # elif 'rrexnum200_old' in simul:
@@ -6138,14 +6305,53 @@ class files(object):
             self.digits = 5
             
             if os.getenv('HOSTNAME') is None:
-                folder= libra +'/gula/ROMS/Simulations/PORCUP/'
+                folder= '/data-gigatl/data/PORCUP/'
                 self.grd=folder + 'porcup_grd.nc'
+                
+                if 'porcupt' in simul:
+                    folder= folder + 'PORCUP_T'
+                else:
+                    folder= folder + 'PORCUP'
+                    
             else:
                 folder= '/home/datawork-lops-osi/jgula/PORCUP/HIS/'
                 self.grd= '/home/datawork-lops-osi/jgula/PORCUP/INIT/porcup_grd.nc'
 
-            self.his = folder + '/porcup_his.'
+            if 'avg' in simul:
+                self.tfile=8
+                self.dtfile=3*3600
+                if 'ts' in simul:
+                    self.his = folder + '/porcup_diaT_avg.'             
+                else:
+                    self.his = folder + '/porcup_avg.'
+            else:
+                self.tfile=2
+                self.dtfile=12*3600
+                if 'ts' in simul:
+                    self.his = folder + '/porcup_diaT.'               
+                else:
+                    self.his = folder + '/porcup_his.'
             
+            self.tfile=2
+            self.dtfile=12*3600
+            self.tend=100000
+
+        ##################
+
+        elif 'martini' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(1979,1,1)
+            self.realyear_tstart = datetime(2008,8,26,12)
+
+            self.model = 'croco'
+            self.digits = 5
+            
+            if os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/MARTINI/'
+                self.grd= folder + 'martini_grd.nc'
+
+            self.his = folder + '/porcup_his.'
             self.tfile=2
             self.dtfile=12*3600
             self.tend=100000
@@ -6269,6 +6475,54 @@ class files(object):
             self.dtfile=12*3600
             self.tend=100000
             
+        ##################
+
+        elif 'SPNA_ucla' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(2010,1,1)
+            self.realyear_tstart = datetime(2010,1,1)
+
+            self.model = 'croco'
+            self.digits = 0
+            
+            if os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/CROSSROADS/SPNA/'
+                self.grd=folder + 'spna_grd.nc'
+            else:
+                folder= '/home/datawork-lops-crossroad/SPNA_ucla/'
+                self.grd= '/home/datawork-lops-crossroad/SPNA_ucla/spna_grd.nc'
+
+            self.his = folder + '/test_ini/croco_ini_49'
+                     
+            self.tfile=2
+            self.dtfile=12*3600
+            self.tend=100000
+            
+        ##################
+
+        elif 'SPNA' in simul:
+        
+            self.realyear = True
+            self.realyear_origin = datetime(2010,1,1)
+            self.realyear_tstart = datetime(2010,1,1)
+
+            self.model = 'croco'
+            self.digits = 0
+            
+            if os.getenv('HOSTNAME') is None:
+                folder= libra +'/gula/ROMS/Simulations/CROSSROADS/SPNA/'
+                self.grd=folder + 'spna_grd_masked.nc'
+            else:
+                folder= '/home/datawork-lops-crossroad/SPNA_ucla/'
+                self.grd= '/home/datawork-lops-crossroad/SPNA_ucla/spna_grd.nc'
+
+            self.his = folder + '/test_ini/croco_ini_50_modified'
+                     
+            self.tfile=2
+            self.dtfile=12*3600
+            self.tend=100000
+             
         ##################
 
         elif 'GSUP5' in simul:

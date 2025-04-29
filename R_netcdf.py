@@ -131,7 +131,7 @@ class ionetcdf(object):
 
 
             ##############################################################
-            # add optionnal attributes
+            # add optional attributes
             ##############################################################
 
             if 'long_name' in kwargs:

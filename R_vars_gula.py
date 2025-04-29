@@ -105,10 +105,12 @@ class var(object):
     'vbar': ['vbar', 'm/s', [0,1,-1]],\
     'zeta': ['SSH', r'$\eta\,(m)$' ,[0,0,-1]],\
     'hbls': ['Thickness of KPP surface boundary layer', 'm', [0,0,-1]],\
-    'hbbl': ['Thickness of KPP bottom boundary layer', 'm', [0,0,-1]],\
     'hbls_rho': ['Surface mixed-layer (based on rho = rhos+ 0.03)', 'm', [0,0,-1]],\
     'hbls_t': ['Surface mixed-layer (based on t = ts - 0.2)', 'm', [0,0,-1]],\
     'hbls_akv': ['Surface mixed-layer (based on Akv<2e-4)', 'm', [0,0,-1]],\
+    'hbbl': ['Thickness of KPP bottom boundary layer', 'm', [0,0,-1]],\
+    'hbbl_rho': ['Thickness of KPP bottom boundary layer (based on rho = rhob - 0.03)', 'm', [0,0,-1]],\
+    'hbbl_akv': ['Thickness of KPP bottom boundary layer', 'm', [0,0,-1]],\
     'Ekman': ['Ekman number (based on hbls_akv)', ' ', [0,0,-1]],\
     'Ekman_rho': ['Ekman number (based on hbls_rho)', ' ', [0,0,-1]],\
     'AKt': ['Temperature vertical diffusion coef', 'm2/s', [0,0,0]],\
@@ -847,10 +849,10 @@ class var(object):
                 print('no S in file')
                 S = T*0.
               
-            rho = toolsF.rho_eos(T,S,z_r,z_w,simul.rho0)
+            rho = toolsF.rho1_eos(T,S,simul.rho0)
 
             # compute MLD
-            var = tools_g.get_hbls_rho(rho,z_r)
+            var = tools_g.get_hbls_rho(rho,z_r,z_w)
 
         ################################################
         
@@ -936,7 +938,7 @@ class var(object):
         
         elif self.name in ['hbbl']:
             '''
-            mixed-layer depth computed as depth where temp<temp_surface-0.2
+            bottom mixed-layer depth computed as height above bottom where AKt<10-4
             '''
 
             print('evaluating hbbl using AKt')
@@ -1140,7 +1142,6 @@ class var(object):
             
         ################################################
 
-
         elif self.name in ['w']:
             
             if debug: print('computing w', coord)
@@ -1155,10 +1156,23 @@ class var(object):
             if (min(depths)>0):
                 depth = np.array(depths) - 1
                 var = var[:,:,depth]
+        ################################################
+
+        elif self.name in ['omega']:
+            
+            #Requires 3d velocities
+            u = self.load('u',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            v = self.load('v',ncfile,simul,coord=coord,depths=simul.coordmax[4])
+            
+            [z_r,z_w] = tools.get_depths(simul,coord=coord)
+            var = tools.nanbnd(toolsF.get_omega(u,v,z_r,z_w,pm,pn))
+            
+            if (min(depths)>0):
+                depth = np.array(depths) - 1
+                var = var[:,:,depth]
                 
         ################################################
 
-        
         elif self.name in ['w_vmix']:
             
             depths_r = simul.coordmax[4]

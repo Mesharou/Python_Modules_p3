@@ -54,9 +54,15 @@ try:
 except:
     print('no gsw module')
     is_gsw = False
-
-from numba import njit
-
+    
+try:
+    from numba import njit
+except ImportError:
+    print('no numba module')
+    # Define a dummy njit decorator if numba is not installed
+    def njit(func):
+        return func
+    
 #################################################
 # get_J1
 #################################################
@@ -2132,9 +2138,11 @@ def first_index_smaller(arr,val,order=1):
     return idx
 
 @njit
-def first_index_larger(arr,val,order=1):
-    if order==1: indices = range(len(arr))
-    else: indices = range(len(arr)-1,-1,-1)
+def first_index_larger(arr, val, order=1):
+    if order == 1:
+        indices = range(len(arr))
+    else:
+        indices = range(len(arr) - 1, -1, -1)
     for idx in indices:
         if arr[idx] >= val:
             return idx
@@ -2190,14 +2198,14 @@ def get_hbls(AKv,z_w,val=2e-4):
 
 ######################################################  
 @njit
-def get_hbls_rho(rho,z_r,val = 0.03):
+def get_hbls_rho(rho,z_r,z_w,val = 0.03):
 ######################################################  
-    """Get Ekman number averaged over rho-defined ML"""
+    """Get rho-defined ML"""
     var = np.full_like(rho[:,:,0],np.nan)
     for i in range(rho.shape[0]):
         for j in range(rho.shape[1]):
-            k_hbl = first_index_larger(rho[i,j,:],rho[i,j,-1]+val,order=-1);
-            var[i,j] = -z_r[i,j,k_hbl]
+            k_hbl = first_index_smaller(rho[i,j,:],rho[i,j,-1]+val,order=1);
+            var[i,j] =z_w[i,j,-1]-z_r[i,j,k_hbl]
     return var
 
 
